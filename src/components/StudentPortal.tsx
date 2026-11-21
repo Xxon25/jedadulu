@@ -33,10 +33,7 @@ import {
   sendLiveChatMessage,
   setActiveStudentId,
 } from "@/lib/store";
-import {
-  DECISION_OUTCOMES,
-  CONSULTATION_TOPICS,
-} from "@/lib/bk-data";
+import { DECISION_OUTCOMES, CONSULTATION_TOPICS } from "@/lib/bk-data";
 
 interface StudentPortalProps {
   state: PlatformState;
@@ -66,7 +63,7 @@ export default function StudentPortal({
   const [answers, setAnswers] = useState<number[]>([-1, -1, -1, -1]);
   const [showTreeForm, setShowTreeForm] = useState<boolean>(false);
 
-  // Form Jurnal Refleksi (dengan auto-save draft lokal)
+  // Form Jurnal Refleksi
   const [jSeen, setJSeen] = useState("");
   const [jFelt, setJFelt] = useState("");
   const [jUnseen, setJUnseen] = useState("");
@@ -81,7 +78,6 @@ export default function StudentPortal({
   const [chatInput, setChatInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Sinkronisasi state form saat siswa aktif berubah
   useEffect(() => {
     if (activeStudent) {
       setSitIdx(activeStudent.situationIdx);
@@ -96,7 +92,6 @@ export default function StudentPortal({
       setJUnseen(activeStudent.journal.unseen || "");
       setJShare(Boolean(activeStudent.journal.sharedWithCounselor));
     } else {
-      // Load draft lokal jika belum login
       try {
         const draft = localStorage.getItem("jedadulu_journal_draft");
         if (draft) {
@@ -106,12 +101,11 @@ export default function StudentPortal({
           setJUnseen(parsed.unseen || "");
         }
       } catch {
-        // abaikan error localStorage
+        // abaikan
       }
     }
   }, [activeStudent]);
 
-  // Auto-save draft jurnal di perangkat
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -132,7 +126,7 @@ export default function StudentPortal({
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cls) {
-      showToast("Pilih kelas X, XI, atau XII terlebih dahulu.");
+      showToast("Pilih jenjang kelas X, XI, atau XII terlebih dahulu.");
       return;
     }
     const res = await registerOrLoginStudent(nick, cls, code, agree);
@@ -144,14 +138,6 @@ export default function StudentPortal({
     showToast(`Selamat datang, ${res.student?.nickname}!`);
   };
 
-  const handleFillDemoIdentity = () => {
-    setNick("Rani");
-    setCls("XI");
-    setCode("JEDA-01");
-    setAgree(true);
-    showToast("Data contoh siswa (Rani · Kelas XI) telah diisi.");
-  };
-
   const handleStudentLogout = () => {
     setActiveStudentId(null);
     onRefresh();
@@ -159,21 +145,15 @@ export default function StudentPortal({
     showToast("Kamu telah keluar dari sesi siswa.");
   };
 
-  const handleFillDemoTree = () => {
-    setSitIdx(2);
-    setAnswers([1, 2, 1, 1]);
-    showToast("Jawaban contoh telah diisi. Klik 'Lihat Hasil Refleksi'.");
-  };
-
   const handleSubmitTree = async () => {
     if (!activeStudent) {
-      showToast("Silakan isi identitas & persetujuan di Beranda terlebih dahulu.");
+      showToast("Silakan lengkapi nama dan kode sekolah di Beranda terlebih dahulu.");
       setTab("beranda");
       return;
     }
     const res = await submitDecisionTreeResult(activeStudent.id, sitIdx, answers);
     if (!res.ok) {
-      showToast(res.error || "Lengkapi seluruh pertanyaan.");
+      showToast(res.error || "Lengkapi seluruh pertanyaan terlebih dahulu.");
       return;
     }
     setShowTreeForm(false);
@@ -183,7 +163,7 @@ export default function StudentPortal({
 
   const handleSaveJournal = async () => {
     if (!activeStudent) {
-      showToast("Silakan isi identitas & persetujuan terlebih dahulu.");
+      showToast("Silakan lengkapi identitas siswa di Beranda terlebih dahulu.");
       setTab("beranda");
       return;
     }
@@ -202,7 +182,7 @@ export default function StudentPortal({
     showToast(
       jShare
         ? "Jurnal disimpan & diizinkan untuk dibaca Guru BK."
-        : "Jurnal disimpan secara privat hanya untukmu."
+        : "Jurnal disimpan secara privat di perangkatmu."
     );
   };
 
@@ -215,13 +195,13 @@ export default function StudentPortal({
     setJShare(false);
     localStorage.removeItem("jedadulu_journal_draft");
     onRefresh();
-    showToast("Jurnal berhasil dihapus.");
+    showToast("Catatan jurnal telah dihapus.");
   };
 
   const handleCreateConsult = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeStudent) {
-      showToast("Masuk sebagai siswa terlebih dahulu.");
+      showToast("Silakan masuk sebagai siswa terlebih dahulu.");
       setTab("beranda");
       return;
     }
@@ -239,13 +219,13 @@ export default function StudentPortal({
     setCNote("");
     setCAgree(false);
     onRefresh();
-    showToast("Permintaan konsultasi berhasil dikirim ke Guru BK!");
+    showToast("Permintaan jadwal konsultasi berhasil dikirim ke Guru BK.");
   };
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeStudent) {
-      showToast("Masuk sebagai siswa terlebih dahulu untuk memulai Live Chat.");
+      showToast("Masuk sebagai siswa terlebih dahulu untuk mengirim pesan.");
       return;
     }
     const res = await sendLiveChatMessage(
@@ -270,8 +250,13 @@ export default function StudentPortal({
     ? state.chatMessages.filter((m) => m.studentId === activeStudent.id)
     : [];
 
-  const navItems: { id: StudentTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: "beranda", label: "Beranda", icon: <Sparkles className="w-4 h-4" /> },
+  const navItems: {
+    id: StudentTab;
+    label: string;
+    icon: React.ReactNode;
+    badge?: string;
+  }[] = [
+    { id: "beranda", label: "Ringkasan & Profil", icon: <Sparkles className="w-4 h-4" /> },
     {
       id: "tree",
       label: "Decision Tree",
@@ -286,59 +271,61 @@ export default function StudentPortal({
     },
     {
       id: "konsul",
-      label: "Konsultasi BK",
+      label: "Jadwal Konsultasi",
       icon: <CalendarCheck className="w-4 h-4" />,
-      badge: studentConsultations.length > 0 ? `${studentConsultations.length}` : undefined,
+      badge:
+        studentConsultations.length > 0 ? `${studentConsultations.length}` : undefined,
     },
     {
       id: "chat",
-      label: "Live Chat BK",
+      label: "Live Chat Guru BK",
       icon: <MessageCircle className="w-4 h-4" />,
-      badge: "Realtime",
     },
     {
       id: "cetak",
-      label: "Versi Cetak Alur",
+      label: "Lembar Cetak (PDF)",
       icon: <Printer className="w-4 h-4" />,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Sidebar Navigasi Siswa */}
-      <aside className="lg:col-span-3 space-y-4 print:hidden">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-800">
+      <aside className="lg:col-span-3 space-y-5 print:hidden">
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-400">
-                Portal Siswa SMA/MA
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
+                Siswa Aktif
               </span>
-              <h2 className="text-base font-bold text-white">
-                {activeStudent ? `${activeStudent.nickname} (Kelas ${activeStudent.classLevel})` : "Belum Masuk"}
+              <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
+                {activeStudent
+                  ? `${activeStudent.nickname} · Kelas ${activeStudent.classLevel}`
+                  : "Belum Terdaftar"}
               </h2>
             </div>
             {activeStudent && (
               <button
                 onClick={handleStudentLogout}
-                title="Keluar Sesi Siswa"
-                className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 transition"
+                title="Keluar Sesi"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          <nav className="space-y-1.5" aria-label="Menu Portal Siswa">
+          <nav className="space-y-1.5" aria-label="Menu Ruang Siswa">
             {navItems.map((item) => {
               const active = tab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setTab(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition ${
                     active
-                      ? "bg-sky-600 text-white shadow-lg shadow-sky-600/25"
-                      : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
@@ -347,10 +334,10 @@ export default function StudentPortal({
                   </span>
                   {item.badge && (
                     <span
-                      className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
+                      className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
                         active
                           ? "bg-white/20 text-white"
-                          : "bg-slate-800 text-sky-300 border border-slate-700"
+                          : "bg-indigo-50 text-indigo-700 border border-indigo-100"
                       }`}
                     >
                       {item.badge}
@@ -362,14 +349,14 @@ export default function StudentPortal({
           </nav>
         </div>
 
-        {/* Kartu Progres Alur Siswa */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Progres Refleksi Mandiri
+        {/* Kartu Tahapan Refleksi */}
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm space-y-3">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+            Tahapan Refleksi
           </h3>
           <ul className="space-y-2 text-xs">
             {[
-              { label: "1. Identitas & Persetujuan", done: Boolean(activeStudent) },
+              { label: "1. Persetujuan & Profil", done: Boolean(activeStudent) },
               {
                 label: "2. Decision Tree (4 Pertanyaan)",
                 done: Boolean(activeStudent?.resultCode),
@@ -379,135 +366,127 @@ export default function StudentPortal({
                 done: Boolean(activeStudent?.journal.saved),
               },
               {
-                label: "4. Konsultasi / Live Chat Guru BK",
+                label: "4. Konsultasi / Diskusi Guru BK",
                 done: studentConsultations.length > 0 || studentChats.length > 0,
               },
             ].map((step, i) => (
               <li
                 key={i}
-                className={`flex items-center gap-2.5 p-2 rounded-xl border ${
+                className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${
                   step.done
-                    ? "bg-emerald-950/30 border-emerald-800/50 text-emerald-300"
-                    : "bg-slate-950/40 border-slate-800/80 text-slate-400"
+                    ? "bg-emerald-50/70 border-emerald-200 text-emerald-900"
+                    : "bg-slate-50 border-slate-200/70 text-slate-500"
                 }`}
               >
                 <CheckCircle2
                   className={`w-4 h-4 shrink-0 ${
-                    step.done ? "text-emerald-400" : "text-slate-600"
+                    step.done ? "text-emerald-600" : "text-slate-300"
                   }`}
                 />
-                <span className="font-medium">{step.label}</span>
+                <span className="font-semibold">{step.label}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Etika & Batas Layanan Sesuai Proposal */}
-        <div className="bg-sky-950/30 border border-sky-800/40 rounded-2xl p-4 text-xs text-sky-200/90 space-y-1.5">
-          <div className="flex items-center gap-2 font-bold text-sky-300">
-            <ShieldCheck className="w-4 h-4" />
-            Prinsip Etika & Privasi BK
+        {/* Jaminan Etika BK */}
+        <div className="bg-indigo-50/60 border border-indigo-100 rounded-3xl p-5 text-xs text-slate-600 space-y-1.5">
+          <div className="flex items-center gap-2 font-bold text-indigo-950">
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            Ruang Aman & Privat
           </div>
-          <p className="leading-relaxed text-slate-300">
-            Website ini memberikan <b>saran refleksi non-diagnostik</b>, tanpa skor dan tanpa pelabelan. Keputusan layanan tetap dipegang oleh Guru BK sebagai konselor profesional (ASCA, 2022; UNESCO, 2023).
+          <p className="leading-relaxed">
+            Layanan ini memberikan <b>saran refleksi non-diagnostik</b>, tanpa skor dan tanpa pelabelan psikologis.
           </p>
         </div>
       </aside>
 
-      {/* Konten Utama Portal Siswa */}
+      {/* Area Konten Utama */}
       <section className="lg:col-span-9 space-y-6">
         {/* TAB 1: BERANDA & IDENTITAS */}
         {tab === "beranda" && (
           <div className="space-y-6">
-            {/* Hero Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 border border-sky-500/20 p-6 sm:p-8 shadow-2xl">
+            {/* Banner Sambutan */}
+            <div className="rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 text-white p-7 sm:p-9 shadow-lg">
               <div className="max-w-2xl space-y-4">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 text-sky-300 text-xs font-semibold">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-sky-300 text-xs font-bold">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Ruang Jeda Digital · Layanan Bimbingan & Konseling SMA/MA
+                  Layanan Bimbingan & Konseling · Refleksi Mandiri
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
                   FOMO atau{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-cyan-300">
-                    Emang Aku Mau?
-                  </span>
+                  <span className="text-sky-300">Emang Aku Mau?</span>
                 </h1>
-                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                  Sebelum ikut tren, membeli barang yang sedang viral, atau terus-menerus mengecek unggahan teman, ambil jeda sejenak. Kenali asal doronganmu dan ambil keputusan dengan lebih sadar.
+                <p className="text-indigo-100/90 text-sm sm:text-base leading-relaxed">
+                  Ambil jeda sejenak sebelum mengikuti tren, membeli barang yang sedang ramai dibicarakan, atau terus memantau unggahan orang lain. Kenali kebutuhanmu dan putuskan dengan tenang.
                 </p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <button
                     onClick={() => setTab("tree")}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-sky-500/20"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-indigo-50 text-indigo-950 font-bold text-sm transition shadow-sm"
                   >
                     Mulai Decision Tree
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setTab("jurnal")}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/15 transition"
                   >
-                    <BookOpen className="w-4 h-4 text-sky-400" />
-                    Buka Jurnal Refleksi
+                    <BookOpen className="w-4 h-4 text-sky-300" />
+                    Tulis Jurnal Refleksi
                   </button>
                   <button
                     onClick={() => setTab("chat")}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-semibold text-sm border border-emerald-500/30 transition"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 font-semibold text-sm border border-emerald-400/30 transition"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    Live Chat Guru BK
+                    Hubungi Guru BK
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Kartu Identitas / Status Siswa */}
             {!activeStudent ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
-                      Langkah Pertama · Minimisasi Data & Persetujuan
-                    </span>
-                    <h2 className="text-xl font-bold text-white mt-1">
-                      Kenalan Dulu Sebelum Mulai Refleksi
-                    </h2>
-                    <p className="text-sm text-slate-400 mt-0.5">
-                      Cukup gunakan nama panggilan, kelas, dan kode sekolah dari Guru BK-mu.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleFillDemoIdentity}
-                    className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/20 transition"
-                  >
-                    Isi Data Contoh (Rani · Kelas XI)
-                  </button>
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div className="mb-6">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                    Langkah Awal · Persetujuan & Identitas Singkat
+                  </span>
+                  <h2 className="text-xl font-extrabold text-slate-900 mt-1">
+                    Mulai Sesi Refleksimu
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    Masukkan nama panggilan, kelas, dan kode sekolah yang diberikan oleh Guru BK-mu.
+                  </p>
                 </div>
 
                 <form onSubmit={handleStudentLogin} className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Nama Panggilan / Lengkap
                       </label>
                       <input
                         type="text"
+                        required
                         value={nick}
                         onChange={(e) => setNick(e.target.value)}
-                        placeholder="Contoh: Rani"
+                        placeholder="Masukkan namamu"
                         maxLength={40}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Kelas
                       </label>
                       <select
+                        required
                         value={cls}
-                        onChange={(e) => setCls(e.target.value as "X" | "XI" | "XII" | "")}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500"
+                        onChange={(e) =>
+                          setCls(e.target.value as "X" | "XI" | "XII" | "")
+                        }
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                       >
                         <option value="">Pilih Kelas</option>
                         <option value="X">Kelas X</option>
@@ -516,30 +495,27 @@ export default function StudentPortal({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Kode Sekolah
                       </label>
                       <input
                         type="text"
+                        required
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="Contoh: JEDA-01"
+                        placeholder="Kode dari Guru BK"
                         maxLength={15}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm uppercase focus:outline-none focus:border-sky-500"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm uppercase font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                       />
                     </div>
                   </div>
 
-                  {/* Kotak Informasi Persetujuan (Informed Consent) sesuai Tabel 6 Proposal */}
-                  <div className="p-4 rounded-2xl bg-slate-950/90 border-l-4 border-sky-500 text-xs text-slate-300 space-y-1.5 leading-relaxed">
+                  <div className="p-4 rounded-2xl bg-indigo-50/70 border-l-4 border-indigo-600 text-xs text-slate-700 space-y-1.5 leading-relaxed">
                     <p>
-                      <strong className="text-white">Data yang dicatat:</strong> Nama panggilan, kelas, hasil refleksi decision tree, jurnal (hanya jika kamu mengizinkan untuk dibagikan), serta pesan konsultasi/live chat.
+                      <strong className="text-slate-900">Data yang dicatat:</strong> Nama panggilan, kelas, hasil refleksi decision tree, jurnal (hanya apabila kamu memilih untuk membagikannya), serta permintaan konsultasi.
                     </p>
                     <p>
-                      <strong className="text-white">Siapa yang dapat melihat:</strong> Hanya Guru BK yang berwenang di sekolahmu. Guru mata pelajaran atau siswa lain tidak memiliki akses.
-                    </p>
-                    <p>
-                      <strong className="text-white">Jaminan Privasi:</strong> Tidak ada skor pelabelan, tidak ada diagnosis psikologis, dan jurnal bisa kamu hapus kapan saja.
+                      <strong className="text-slate-900">Akses & Kerahasiaan:</strong> Hanya Guru BK yang berwenang di sekolahmu yang dapat meninjau tindak lanjut layanan. Guru mata pelajaran tidak memiliki akses.
                     </p>
                   </div>
 
@@ -548,19 +524,19 @@ export default function StudentPortal({
                       type="checkbox"
                       checked={agree}
                       onChange={(e) => setAgree(e.target.checked)}
-                      className="mt-0.5 w-5 h-5 rounded accent-sky-500"
+                      className="mt-0.5 w-5 h-5 rounded accent-indigo-600"
                     />
-                    <span className="text-sm text-slate-200 font-medium">
-                      Aku sudah membaca informasi di atas dan setuju menggunakan ruang refleksi ini dengan sadar.
+                    <span className="text-sm text-slate-700 font-medium">
+                      Saya telah membaca penjelasan privasi di atas dan setuju menggunakan ruang refleksi ini.
                     </span>
                   </label>
 
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm transition flex items-center justify-center gap-2"
                   >
                     <UserCheck className="w-4 h-4" />
-                    Setuju & Masuk Ruang Refleksi
+                    Setuju & Mulai Refleksi
                   </button>
                 </form>
               </div>
@@ -568,17 +544,17 @@ export default function StudentPortal({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
                   onClick={() => setTab("tree")}
-                  className="text-left p-5 rounded-2xl bg-slate-900 hover:bg-slate-800/90 border border-slate-800 transition group"
+                  className="text-left p-6 rounded-3xl bg-white hover:border-indigo-300 border border-slate-200/90 shadow-sm transition group"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400">
+                    <span className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-600">
                       <GitBranch className="w-5 h-5" />
                     </span>
                     <span
                       className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                         activeStudent.resultCode
-                          ? "bg-emerald-500/15 text-emerald-300"
-                          : "bg-amber-500/15 text-amber-300"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
                       }`}
                     >
                       {activeStudent.resultCode
@@ -586,10 +562,10 @@ export default function StudentPortal({
                         : "Belum Mengisi"}
                     </span>
                   </div>
-                  <h3 className="font-bold text-white group-hover:text-sky-300 transition">
-                    1. Decision Tree FOMO
+                  <h3 className="font-extrabold text-slate-900 group-hover:text-indigo-600 transition">
+                    Decision Tree FOMO
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     {activeStudent.resultCode
                       ? DECISION_OUTCOMES[activeStudent.resultCode].title
                       : "Jawab 4 pertanyaan berjenjang untuk menimbang doronganmu."}
@@ -598,17 +574,17 @@ export default function StudentPortal({
 
                 <button
                   onClick={() => setTab("jurnal")}
-                  className="text-left p-5 rounded-2xl bg-slate-900 hover:bg-slate-800/90 border border-slate-800 transition group"
+                  className="text-left p-6 rounded-3xl bg-white hover:border-indigo-300 border border-slate-200/90 shadow-sm transition group"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                    <span className="p-2.5 rounded-2xl bg-sky-50 text-sky-600">
                       <BookOpen className="w-5 h-5" />
                     </span>
                     <span
                       className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                         activeStudent.journal.saved
-                          ? "bg-emerald-500/15 text-emerald-300"
-                          : "bg-slate-800 text-slate-400"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-100 text-slate-600"
                       }`}
                     >
                       {activeStudent.journal.saved
@@ -618,46 +594,46 @@ export default function StudentPortal({
                         : "Belum Ditulis"}
                     </span>
                   </div>
-                  <h3 className="font-bold text-white group-hover:text-purple-300 transition">
-                    2. Jurnal &ldquo;My Life, Their Highlight&rdquo;
+                  <h3 className="font-extrabold text-slate-900 group-hover:text-sky-600 transition">
+                    Jurnal &ldquo;My Life, Their Highlight&rdquo;
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Kelola perbandingan sosial dengan membedakan apa yang tampak di layar dan kenyataan.
                   </p>
                 </button>
 
                 <button
                   onClick={() => setTab("chat")}
-                  className="text-left p-5 rounded-2xl bg-slate-900 hover:bg-slate-800/90 border border-slate-800 transition group"
+                  className="text-left p-6 rounded-3xl bg-white hover:border-indigo-300 border border-slate-200/90 shadow-sm transition group"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                    <span className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600">
                       <MessageCircle className="w-5 h-5" />
                     </span>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-300">
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
                       {studentChats.length} Pesan
                     </span>
                   </div>
-                  <h3 className="font-bold text-white group-hover:text-emerald-300 transition">
-                    3. Live Chat & Konsultasi BK
+                  <h3 className="font-extrabold text-slate-900 group-hover:text-emerald-600 transition">
+                    Live Chat & Konsultasi BK
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     Diskusi langsung secara privat dengan Guru BK atau jadwalkan sesi tatap muka.
                   </p>
                 </button>
               </div>
             )}
 
-            {/* Latihan Pernapasan / Jeda Singkat */}
-            <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 text-center space-y-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
-                Latihan Regulasi Diri · Muhasabah & Qana&apos;ah
+            {/* Pengingat Jeda & Muhasabah */}
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 text-center space-y-2 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+                Jeda Reflektif · Muhasabah & Qana&apos;ah
               </span>
-              <h3 className="text-2xl font-extrabold text-white">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                 Tarik napas dalam... hembuskan perlahan.
               </h3>
-              <p className="text-sm text-slate-300 max-w-xl mx-auto">
-                &ldquo;Apakah keinginan ini sungguh berangkat dari kebutuhanku, atau hanya karena aku takut tertinggal dari apa yang dilakukan orang lain?&rdquo;
+              <p className="text-sm text-slate-600 max-w-xl mx-auto">
+                &ldquo;Apakah keinginan ini sungguh berangkat dari kebutuhanku, atau hanya karena aku khawatir tertinggal dari apa yang dilakukan orang lain?&rdquo;
               </p>
             </div>
           </div>
@@ -665,92 +641,91 @@ export default function StudentPortal({
 
         {/* TAB 2: DECISION TREE */}
         {tab === "tree" && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
-                  Decision Tree Interaktif · 4 Pertanyaan Reflektif
-                </span>
-                <h2 className="text-2xl font-bold text-white mt-1">
-                  FOMO atau Emang Aku Mau?
-                </h2>
-                <p className="text-sm text-slate-400">
-                  Ini ruang aman untuk menimbang keputusanmu, bukan untuk menghakimi atau memberi skor.
-                </p>
-              </div>
-              {showTreeForm && (
-                <button
-                  type="button"
-                  onClick={handleFillDemoTree}
-                  className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/20 transition"
-                >
-                  Isi Jawaban Contoh (Demo)
-                </button>
-              )}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                Decision Tree Interaktif · 4 Pertanyaan Reflektif
+              </span>
+              <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                FOMO atau Emang Aku Mau?
+              </h2>
+              <p className="text-sm text-slate-500">
+                Pilih jawaban yang paling menggambarkan keadaanmu saat ini. Tidak ada skor maupun penilaian benar/salah.
+              </p>
             </div>
 
             {!showTreeForm && activeStudent?.resultCode ? (
-              /* Tampilan Hasil A / B / C */
               <div className="space-y-6">
                 {(() => {
                   const res = DECISION_OUTCOMES[activeStudent.resultCode];
                   const colorStyles =
                     res.code === "A"
-                      ? "bg-emerald-950/50 border-emerald-500/40 text-emerald-200"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-950"
                       : res.code === "B"
-                      ? "bg-amber-950/50 border-amber-500/40 text-amber-200"
-                      : "bg-rose-950/50 border-rose-500/40 text-rose-200";
+                      ? "bg-amber-50 border-amber-200 text-amber-950"
+                      : "bg-rose-50 border-rose-200 text-rose-950";
+                  const badgeStyle =
+                    res.code === "A"
+                      ? "bg-emerald-600 text-white"
+                      : res.code === "B"
+                      ? "bg-amber-600 text-white"
+                      : "bg-rose-600 text-white";
                   return (
-                    <div className={`p-6 rounded-2xl border-2 ${colorStyles} space-y-3`}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 text-white">
+                    <div className={`p-6 rounded-3xl border-2 ${colorStyles} space-y-3`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span
+                          className={`text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full ${badgeStyle}`}
+                        >
                           {res.badge}
                         </span>
-                        <span className="text-xs opacity-80">
-                          Situasi: {state.customSituations[activeStudent.situationIdx] || "-"}
+                        <span className="text-xs font-semibold opacity-75">
+                          Situasi:{" "}
+                          {state.customSituations[activeStudent.situationIdx] || "-"}
                         </span>
                       </div>
-                      <h3 className="text-2xl font-extrabold text-white">{res.title}</h3>
-                      <p className="text-sm sm:text-base leading-relaxed text-white/90">
+                      <h3 className="text-2xl font-extrabold">{res.title}</h3>
+                      <p className="text-sm sm:text-base leading-relaxed opacity-90">
                         {res.text}
                       </p>
                     </div>
                   );
                 })()}
 
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-3">
-                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-sky-400" />
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-indigo-600" />
                     Langkah Kecil yang Bisa Kamu Coba Sekarang:
                   </h4>
-                  <ul className="list-disc list-inside text-sm text-slate-300 space-y-1.5">
-                    {DECISION_OUTCOMES[activeStudent.resultCode].tips.map((tip, idx) => (
-                      <li key={idx}>{tip}</li>
-                    ))}
+                  <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
+                    {DECISION_OUTCOMES[activeStudent.resultCode].tips.map(
+                      (tip, idx) => (
+                        <li key={idx}>{tip}</li>
+                      )
+                    )}
                   </ul>
-                  <div className="pt-2 border-t border-slate-800 text-xs text-sky-300 italic">
+                  <div className="pt-3 border-t border-slate-200 text-xs text-indigo-700 font-medium italic">
                     {DECISION_OUTCOMES[activeStudent.resultCode].muhasabah}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">
-                  <b>Penegasan Etika BK:</b> Hasil di atas merupakan saran refleksi mandiri berdasarkan alur jawabanmu, <b>bukan diagnosis psikologis</b> dan bukan pelabelan diri.
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                  <b>Catatan Layanan BK:</b> Hasil di atas merupakan saran refleksi mandiri berdasarkan alur jawabanmu, <b>bukan diagnosis psikologis</b> dan bukan pelabelan diri.
                 </div>
 
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => setTab("jurnal")}
-                    className="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center gap-2"
                   >
                     <BookOpen className="w-4 h-4" />
-                    Lanjut Tulis Jurnal Refleksi
+                    Tulis Refleksi di Jurnal
                   </button>
                   <button
                     onClick={() => setTab("chat")}
-                    className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition flex items-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition flex items-center gap-2"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    Diskusikan via Live Chat Guru BK
+                    Bicarakan dengan Guru BK
                   </button>
                   <button
                     onClick={() => {
@@ -758,7 +733,7 @@ export default function StudentPortal({
                       setAnswers([-1, -1, -1, -1]);
                       setShowTreeForm(true);
                     }}
-                    className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition flex items-center gap-2"
+                    className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition flex items-center gap-2"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Ulangi dengan Situasi Lain
@@ -766,11 +741,10 @@ export default function StudentPortal({
                 </div>
               </div>
             ) : (
-              /* Formulir 4 Pertanyaan Decision Tree */
               <div className="space-y-6">
                 {/* Pilihan Situasi */}
-                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-3">
-                  <label className="block text-sm font-bold text-sky-300">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                  <label className="block text-sm font-extrabold text-slate-900">
                     Langkah Awal: Pilih situasi media sosial yang sedang kamu hadapi
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -779,10 +753,10 @@ export default function StudentPortal({
                         key={idx}
                         type="button"
                         onClick={() => setSitIdx(idx)}
-                        className={`text-left p-3.5 rounded-xl border text-sm font-medium transition ${
+                        className={`text-left p-3.5 rounded-xl border text-sm font-semibold transition ${
                           sitIdx === idx
-                            ? "bg-sky-600/20 border-sky-500 text-white"
-                            : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700"
+                            ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                            : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"
                         }`}
                       >
                         {sit}
@@ -796,17 +770,19 @@ export default function StudentPortal({
                   {state.customQuestions.map((q, qIndex) => (
                     <div
                       key={q.id}
-                      className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 space-y-3"
+                      className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-3"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
                           Pertanyaan {q.code} (Langkah {qIndex + 1} dari 4)
                         </span>
-                        <span className="text-[11px] text-slate-400">
-                          Landasan: {q.theoryBasis}
+                        <span className="text-[11px] text-slate-500">
+                          {q.theoryBasis}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-white">{q.question}</h3>
+                      <h3 className="text-base font-extrabold text-slate-900">
+                        {q.question}
+                      </h3>
                       <div className="space-y-2">
                         {q.options.map((opt, optIdx) => {
                           const selected = answers[qIndex] === optIdx;
@@ -821,13 +797,13 @@ export default function StudentPortal({
                               }}
                               className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition flex items-center justify-between ${
                                 selected
-                                  ? "bg-sky-500/20 border-sky-400 text-white font-semibold"
-                                  : "bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700"
+                                  ? "bg-indigo-600 border-indigo-600 text-white font-bold shadow-sm"
+                                  : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"
                               }`}
                             >
                               <span>{opt}</span>
                               {selected && (
-                                <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                               )}
                             </button>
                           );
@@ -838,13 +814,13 @@ export default function StudentPortal({
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-                  <p className="text-xs text-slate-400">
-                    Tidak ada jawaban benar atau salah. Pilih yang paling jujur menggambarkan dirimu.
+                  <p className="text-xs text-slate-500">
+                    Pastikan situasi dan keempat pertanyaan telah dipilih sebelum melihat hasil.
                   </p>
                   <button
                     type="button"
                     onClick={handleSubmitTree}
-                    className="px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-sky-500/20"
+                    className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center gap-2 shadow-md shadow-indigo-600/20"
                   >
                     Lihat Hasil Refleksi
                     <ArrowRight className="w-4 h-4" />
@@ -855,76 +831,75 @@ export default function StudentPortal({
           </div>
         )}
 
-        {/* TAB 3: JURNAL REFLEKSI ("My Life, Their Highlight") */}
+        {/* TAB 3: JURNAL REFLEKSI */}
         {tab === "jurnal" && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="border-b border-slate-800 pb-5">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                 Jurnal Refleksi Perbandingan Sosial (Septianto et al., 2025)
               </span>
-              <h2 className="text-2xl font-bold text-white mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
                 My Life, Their Highlight
               </h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Media sosial sering kali hanya memajang panggung terbaik (highlight) hidup orang lain. Mari beri ruang yang adil untuk ceritamu sendiri.
+              <p className="text-sm text-slate-500 mt-1">
+                Unggahan orang lain di media sosial umumnya hanya menampilkan sisi terbaik hidup mereka. Mari beri ruang yang jujur untuk ceritamu sendiri.
               </p>
             </div>
 
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-bold text-white mb-2">
+                <label className="block text-sm font-bold text-slate-900 mb-2">
                   1. Hal apa yang baru saja kamu lihat atau temui di media sosial?
                 </label>
                 <textarea
                   rows={3}
                   value={jSeen}
                   onChange={(e) => setJSeen(e.target.value)}
-                  placeholder="Contoh: Teman-teman mengunggah keseruan nonton konser atau membeli sepatu yang sedang tren..."
-                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
+                  placeholder="Contoh: Teman-teman mengunggah keseruan acara atau membeli barang yang sedang ramai..."
+                  className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-white mb-2">
-                  2. Apa yang kamu rasakan di dalam hati setelah melihat unggahan itu?
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  2. Apa yang kamu rasakan setelah melihat unggahan tersebut?
                 </label>
                 <textarea
                   rows={3}
                   value={jFelt}
                   onChange={(e) => setJFelt(e.target.value)}
-                  placeholder="Ceritakan perasaanmu dengan jujur tanpa perlu menyalahkan dirimu sendiri..."
-                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
+                  placeholder="Tuliskan perasaanmu dengan jujur tanpa perlu menghakimi diri sendiri..."
+                  className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-white mb-2">
-                  3. Bagian apa dari kehidupan mereka yang mungkin TIDAK terlihat di balik unggahan tersebut?
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  3. Bagian apa dari cerita mereka yang mungkin TIDAK tampak di balik unggahan itu?
                 </label>
                 <textarea
                   rows={3}
                   value={jUnseen}
                   onChange={(e) => setJUnseen(e.target.value)}
-                  placeholder="Contoh: Usaha keras, tabungan yang terkuras, rasa lelah, atau masalah pribadi yang tidak mereka tampilkan di kamera..."
-                  className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
+                  placeholder="Contoh: Usaha panjang, biaya yang harus ditabung, atau kesulitan yang tidak ditampilkan di layar..."
+                  className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                 />
               </div>
 
-              {/* Opsi Bagikan ke Guru BK */}
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                 <label className="flex items-start gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={jShare}
                     onChange={(e) => setJShare(e.target.checked)}
-                    className="mt-0.5 w-5 h-5 rounded accent-sky-500"
+                    className="mt-0.5 w-5 h-5 rounded accent-indigo-600"
                   />
                   <div>
-                    <span className="text-sm font-bold text-white block">
+                    <span className="text-sm font-bold text-slate-900 block">
                       Izinkan Guru BK membaca jurnal ini
                     </span>
-                    <span className="text-xs text-slate-400">
-                      Jika tidak dicentang, isi jurnal ini 100% berstatus privat untuk dirimu sendiri dan terkunci di Dashboard Guru BK.
+                    <span className="text-xs text-slate-500">
+                      Apabila tidak dicentang, catatan jurnal ini hanya tersimpan untuk dirimu sendiri dan terkunci di ruang Guru BK.
                     </span>
                   </div>
                 </label>
@@ -935,7 +910,7 @@ export default function StudentPortal({
                   <button
                     type="button"
                     onClick={handleSaveJournal}
-                    className="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center gap-2"
                   >
                     <Save className="w-4 h-4" />
                     Simpan Jurnal Refleksi
@@ -943,27 +918,26 @@ export default function StudentPortal({
                   <button
                     type="button"
                     onClick={handleDeleteJournal}
-                    className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 font-semibold text-sm border border-slate-700 transition flex items-center gap-2"
+                    className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 font-bold text-sm border border-slate-200 transition flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Hapus Jurnal
                   </button>
                 </div>
-                <span className="text-xs text-slate-400">
-                  ✓ Draf otomatis tersimpan di peramban perangkat ini
+                <span className="text-xs text-slate-500">
+                  ✓ Draf tersimpan otomatis di perangkat ini
                 </span>
               </div>
             </div>
 
-            {/* Peringatan Keadaan Darurat sesuai Tabel 6 Proposal */}
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 flex items-start gap-3 text-xs text-amber-200">
-              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-900">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <strong className="text-amber-300 block text-sm">
-                  Merasa Tidak Aman atau Butuh Bantuan Segera?
+                <strong className="font-bold block text-sm">
+                  Merasa Tidak Aman atau Membutuhkan Bantuan Segera?
                 </strong>
                 <p className="leading-relaxed">
-                  Sistem tidak membaca isi jurnal secara otomatis untuk mendeteksi krisis. Jika kamu merasa sangat tertekan, tidak aman, atau ingin menyakiti diri sendiri, segera hubungi Guru BK secara langsung atau orang dewasa tepercaya di sekitarmu.
+                  Sistem tidak memindai isi jurnal secara otomatis. Jika kamu merasa tidak aman atau mengalami tekanan berat, segera hubungi Guru BK secara langsung atau orang dewasa tepercaya di sekitarmu.
                 </p>
               </div>
             </div>
@@ -973,28 +947,28 @@ export default function StudentPortal({
         {/* TAB 4: PERMINTAAN KONSULTASI BK */}
         {tab === "konsul" && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-              <div className="border-b border-slate-800 pb-5">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  Layanan Responsif BK · Pintu Masuk Awal Konseling
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="border-b border-slate-100 pb-5">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                  Layanan Responsif BK · Pengajuan Konseling
                 </span>
-                <h2 className="text-2xl font-bold text-white mt-1">
-                  Pengajuan Jadwal Konsultasi Guru BK
+                <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                  Jadwalkan Sesi Konsultasi dengan Guru BK
                 </h2>
-                <p className="text-sm text-slate-400 mt-1">
-                  Bawa topik refleksimu agar Guru BK dapat menyiapkan sesi bimbingan yang nyaman dan tepat sasaran.
+                <p className="text-sm text-slate-500 mt-1">
+                  Pilih topik yang ingin kamu bicarakan agar Guru BK dapat menyiapkan waktu layanan yang sesuai.
                 </p>
               </div>
 
               <form onSubmit={handleCreateConsult} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-white mb-2">
-                    Topik yang Ingin Dibicarakan
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Topik Pembicaraan
                   </label>
                   <select
                     value={cTopic}
                     onChange={(e) => setCTopic(e.target.value)}
-                    className="w-full px-4 py-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
+                    className="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                   >
                     <option value="">-- Pilih Topik Konsultasi --</option>
                     {CONSULTATION_TOPICS.map((t, i) => (
@@ -1006,15 +980,15 @@ export default function StudentPortal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-white mb-2">
-                    Ringkasan Singkat / Harapanmu (Opsional)
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Ringkasan Singkat (Opsional)
                   </label>
                   <textarea
                     rows={3}
                     value={cNote}
                     onChange={(e) => setCNote(e.target.value)}
-                    placeholder="Tuliskan sedikit gambaran agar Guru BK memahami konteks ceritamu..."
-                    className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-sky-500"
+                    placeholder="Tuliskan hal yang ingin kamu sampaikan terlebih dahulu kepada Guru BK..."
+                    className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                   />
                 </div>
 
@@ -1023,16 +997,16 @@ export default function StudentPortal({
                     type="checkbox"
                     checked={cAgree}
                     onChange={(e) => setCAgree(e.target.checked)}
-                    className="mt-0.5 w-5 h-5 rounded accent-sky-500"
+                    className="mt-0.5 w-5 h-5 rounded accent-indigo-600"
                   />
-                  <span className="text-sm text-slate-300">
-                    Saya setuju mengirimkan permintaan konsultasi ini kepada Guru BK yang berwenang di sekolah saya.
+                  <span className="text-sm text-slate-700">
+                    Saya setuju mengirimkan permintaan konsultasi ini kepada Guru BK di sekolah saya.
                   </span>
                 </label>
 
                 <button
                   type="submit"
-                  className="px-6 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center gap-2"
+                  className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center gap-2"
                 >
                   <CalendarCheck className="w-4 h-4" />
                   Kirim Permintaan Konsultasi
@@ -1040,46 +1014,45 @@ export default function StudentPortal({
               </form>
             </div>
 
-            {/* Riwayat Permintaan Konsultasi Siswa */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <h3 className="text-lg font-bold text-white">
-                Status Permintaan Konsultasimu ({studentConsultations.length})
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="text-lg font-extrabold text-slate-900">
+                Riwayat Pengajuan Konsultasimu ({studentConsultations.length})
               </h3>
               {studentConsultations.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  Belum ada permintaan konsultasi yang dikirim.
+                <p className="text-sm text-slate-500">
+                  Belum ada permintaan jadwal konsultasi yang dikirim.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {studentConsultations.map((req) => (
                     <div
                       key={req.id}
-                      className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">
+                          <span className="font-bold text-slate-900 text-sm">
                             {req.topic}
                           </span>
                           <span
                             className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                               req.status === "Baru"
-                                ? "bg-amber-500/20 text-amber-300"
+                                ? "bg-amber-100 text-amber-800"
                                 : req.status === "Dijadwalkan"
-                                ? "bg-sky-500/20 text-sky-300"
-                                : "bg-emerald-500/20 text-emerald-300"
+                                ? "bg-indigo-100 text-indigo-800"
+                                : "bg-emerald-100 text-emerald-800"
                             }`}
                           >
                             {req.status}
                           </span>
                         </div>
                         {req.note && (
-                          <p className="text-xs text-slate-300">
+                          <p className="text-xs text-slate-600">
                             Catatanmu: &ldquo;{req.note}&rdquo;
                           </p>
                         )}
                         {req.counselorNote && (
-                          <p className="text-xs text-sky-300 bg-sky-950/40 px-3 py-1.5 rounded-lg border border-sky-800/40 mt-2">
+                          <p className="text-xs text-indigo-900 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-200 mt-2">
                             <b>Tanggapan Guru BK:</b> {req.counselorNote}{" "}
                             {req.scheduledDate ? `(${req.scheduledDate})` : ""}
                           </p>
@@ -1087,10 +1060,10 @@ export default function StudentPortal({
                       </div>
                       <button
                         onClick={() => setTab("chat")}
-                        className="shrink-0 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-300 transition flex items-center gap-1.5"
+                        className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-indigo-600 transition flex items-center gap-1.5"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        Buka Chat
+                        Buka Diskusi
                       </button>
                     </div>
                   ))}
@@ -1100,58 +1073,56 @@ export default function StudentPortal({
           </div>
         )}
 
-        {/* TAB 5: LIVE CHAT REALTIME DENGAN GURU BK */}
+        {/* TAB 5: LIVE CHAT KONSELING BK */}
         {tab === "chat" && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col h-[560px]">
-            {/* Header Chat */}
-            <div className="p-4 sm:px-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+          <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-sm flex flex-col h-[560px]">
+            <div className="p-4 sm:px-6 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
                   <HeartHandshake className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="font-bold text-white text-sm sm:text-base">
-                      Ruang Live Chat Konseling BK
+                      Ruang Diskusi & Live Chat Guru BK
                     </h2>
-                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-semibold">
+                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Online
+                      Aktif
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    Terhubung dengan Guru BK Sekolah · Percakapan bersifat rahasia & tidak menghakimi
+                  <p className="text-xs text-slate-300">
+                    Percakapan bersifat rahasia antara kamu dan Guru BK sekolahmu
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Area Pesan */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-950/50">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50">
               {!activeStudent ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
-                  <MessageCircle className="w-10 h-10 text-slate-600" />
-                  <h3 className="font-bold text-white">
-                    Masuk sebagai Siswa untuk Memulai Live Chat
+                  <MessageCircle className="w-10 h-10 text-slate-400" />
+                  <h3 className="font-extrabold text-slate-900">
+                    Lengkapi Identitas Singkat untuk Memulai Chat
                   </h3>
-                  <p className="text-xs text-slate-400 max-w-md">
-                    Agar Guru BK dapat membalas pesanmu dengan tepat, silakan isi nama panggilan dan kode sekolah di tab Beranda terlebih dahulu.
+                  <p className="text-xs text-slate-500 max-w-md">
+                    Silakan isi nama panggilan dan kode sekolah di tab Ringkasan & Profil terlebih dahulu agar Guru BK dapat mengenali dan membalas pesanmu.
                   </p>
                   <button
                     onClick={() => setTab("beranda")}
-                    className="px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs"
+                    className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs"
                   >
-                    Ke Beranda Sekarang
+                    Lengkapi Profil Sekarang
                   </button>
                 </div>
               ) : studentChats.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
-                  <MessageCircle className="w-10 h-10 text-sky-400/50" />
-                  <p className="text-sm font-semibold text-white">
-                    Belum ada percakapan dengan Guru BK
+                  <MessageCircle className="w-10 h-10 text-indigo-400" />
+                  <p className="text-sm font-bold text-slate-900">
+                    Mulai Percakapan dengan Guru BK
                   </p>
-                  <p className="text-xs text-slate-400 max-w-sm">
-                    Sapa Guru BK di bawah ini! Kamu bisa bercerita tentang hasil Decision Tree-mu atau perasaan FOMO yang sedang kamu alami.
+                  <p className="text-xs text-slate-500 max-w-sm">
+                    Kamu dapat menyapa Guru BK dan menceritakan hasil refleksi Decision Tree-mu atau hal yang sedang membuatmu ragu.
                   </p>
                 </div>
               ) : (
@@ -1165,10 +1136,10 @@ export default function StudentPortal({
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1 px-1">
-                        <span className="text-[11px] font-bold text-slate-400">
+                        <span className="text-[11px] font-bold text-slate-500">
                           {isMe ? `${msg.senderName} (Kamu)` : msg.senderName}
                         </span>
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {new Date(msg.createdAt).toLocaleTimeString("id-ID", {
                             hour: "2-digit",
@@ -1177,10 +1148,10 @@ export default function StudentPortal({
                         </span>
                       </div>
                       <div
-                        className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                        className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                           isMe
-                            ? "bg-sky-600 text-white rounded-br-none"
-                            : "bg-slate-800 border border-slate-700 text-slate-100 rounded-bl-none"
+                            ? "bg-indigo-600 text-white rounded-br-none"
+                            : "bg-white border border-slate-200 text-slate-800 rounded-bl-none"
                         }`}
                       >
                         {msg.message}
@@ -1192,10 +1163,9 @@ export default function StudentPortal({
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input Pesan */}
             <form
               onSubmit={handleSendChat}
-              className="p-3 sm:p-4 bg-slate-950 border-t border-slate-800 flex items-center gap-2.5"
+              className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2.5"
             >
               <input
                 type="text"
@@ -1204,15 +1174,15 @@ export default function StudentPortal({
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder={
                   activeStudent
-                    ? "Tulis pesan reflektif atau pertanyaan untuk Guru BK..."
-                    : "Isi identitas di Beranda terlebih dahulu..."
+                    ? "Tulis pesan untuk Guru BK..."
+                    : "Lengkapi profil siswa terlebih dahulu..."
                 }
-                className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-sky-500 disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-indigo-600 disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!activeStudent || !chatInput.trim()}
-                className="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-40 text-slate-950 font-bold text-sm transition flex items-center gap-2"
+                className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-sm transition flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">Kirim</span>
@@ -1221,42 +1191,43 @@ export default function StudentPortal({
           </div>
         )}
 
-        {/* TAB 6: VERSI CETAK ALUR (AKSESIBILITAS INTERNET TERBATAS SESUAI PROPOSAL BAB 1.6 & 3.4.4) */}
+        {/* TAB 6: VERSI CETAK ALUR */}
         {tab === "cetak" && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                   Aksesibilitas & Kesetaraan Akses (UNESCO, 2023)
                 </span>
-                <h2 className="text-2xl font-bold text-white mt-1">
-                  Lembar Alur Cetak Decision Tree & Jurnal Refleksi
+                <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                  Lembar Cetak Alur Decision Tree & Jurnal Refleksi
                 </h2>
-                <p className="text-sm text-slate-400">
-                  Dapat dicetak atau disimpan sebagai PDF bagi siswa yang memiliki keterbatasan kuota internet.
+                <p className="text-sm text-slate-500">
+                  Dapat dicetak atau disimpan sebagai PDF bagi siswa yang memiliki keterbatasan akses internet.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition flex items-center gap-2 print:hidden"
+                className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition flex items-center gap-2 print:hidden"
               >
                 <Printer className="w-4 h-4" />
-                Cetak / Simpan PDF Sekarang
+                Cetak / Simpan PDF
               </button>
             </div>
 
-            <div className="space-y-4 text-sm text-slate-200">
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <h3 className="font-bold text-sky-300 mb-2">
+            <div className="space-y-4 text-sm text-slate-700">
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <h3 className="font-extrabold text-slate-900 mb-3">
                   A. 4 Pertanyaan Pemandu Decision Tree &ldquo;FOMO atau Emang Aku Mau?&rdquo;
                 </h3>
-                <ol className="list-decimal list-inside space-y-2 text-slate-300">
+                <ol className="list-decimal list-inside space-y-2.5 text-slate-700">
                   {state.customQuestions.map((q) => (
                     <li key={q.id}>
-                      <b className="text-white">{q.question}</b>
-                      <div className="pl-5 text-xs text-slate-400 mt-0.5">
-                        Pilihan: (a) {q.options[0]} · (b) {q.options[1]} · (c) {q.options[2]}
+                      <b className="text-slate-900">{q.question}</b>
+                      <div className="pl-5 text-xs text-slate-500 mt-0.5">
+                        Pilihan: (a) {q.options[0]} · (b) {q.options[1]} · (c){" "}
+                        {q.options[2]}
                       </div>
                     </li>
                   ))}
@@ -1267,36 +1238,36 @@ export default function StudentPortal({
                 {(["A", "B", "C"] as const).map((k) => (
                   <div
                     key={k}
-                    className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5"
+                    className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
                   >
-                    <span className="text-xs font-bold text-sky-400">
+                    <span className="text-xs font-bold text-indigo-600">
                       {DECISION_OUTCOMES[k].badge}
                     </span>
-                    <h4 className="font-bold text-white">
+                    <h4 className="font-bold text-slate-900">
                       {DECISION_OUTCOMES[k].title}
                     </h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       {DECISION_OUTCOMES[k].text}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <h3 className="font-bold text-purple-300">
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <h3 className="font-extrabold text-slate-900">
                   B. Panduan Jurnal Refleksi Mandiri &ldquo;My Life, Their Highlight&rdquo;
                 </h3>
-                <p className="text-xs text-slate-300">
-                  1. Apa unggahan media sosial yang baru saja kamu lihat? <br />
-                  2. Apa perasaan yang muncul setelah melihatnya? <br />
-                  3. Bagian apa dari kehidupan mereka yang tidak tampak di kamera?
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  1. Hal apa yang baru saja kamu lihat atau temui di media sosial? <br />
+                  2. Apa yang kamu rasakan setelah melihat unggahan tersebut? <br />
+                  3. Bagian apa dari kehidupan mereka yang mungkin tidak tampak di layar?
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-400 pt-2">
-                <Info className="w-4 h-4 text-sky-400 shrink-0" />
+              <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
+                <Info className="w-4 h-4 text-indigo-600 shrink-0" />
                 <span>
-                  Disusun oleh Larasati Adi Ningrum (NPM 2411080031) · BKPI UIN Raden Intan Lampung.
+                  jedadulu.id · Program Studi Bimbingan dan Konseling Pendidikan Islam, UIN Raden Intan Lampung (2026).
                 </span>
               </div>
             </div>

@@ -9,9 +9,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "jedadulu.id · FOMO atau Emang Aku Mau? — Layanan BK Interaktif",
+  title: "jedadulu.id — FOMO atau Emang Aku Mau? · Layanan BK Digital SMA/MA",
   description:
-    "Website Layanan Bimbingan dan Konseling Interaktif Berbasis Decision Tree untuk Membantu Siswa SMA/MA Mengambil Keputusan Sadar di Media Sosial. Disusun oleh Larasati Adi Ningrum (UIN Raden Intan Lampung).",
+    "Platform Layanan Bimbingan dan Konseling Interaktif Berbasis Decision Tree untuk Membantu Siswa SMA/MA Mengambil Keputusan Sadar di Media Sosial.",
 };
 
 export default function RootLayout({
@@ -20,9 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="dark">
+    <html lang="id">
       <body
-        className={`${plusJakarta.variable} font-sans antialiased min-h-screen flex flex-col selection:bg-sky-500 selection:text-slate-950`}
+        className={`${plusJakarta.variable} font-sans antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-indigo-600 selection:text-white`}
       >
         {children}
       </body>

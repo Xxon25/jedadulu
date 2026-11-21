@@ -1,95 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
+import Link from "next/link";
 import {
-  GraduationCap,
-  HeartHandshake,
+  ArrowRight,
+  GitBranch,
+  BookOpen,
+  MessageCircle,
   ShieldCheck,
-  Database,
+  Sparkles,
   CheckCircle2,
-  BookOpenCheck,
+  HeartHandshake,
+  Brain,
+  Scale,
+  Compass,
+  Lock,
 } from "lucide-react";
-import {
-  PlatformState,
-  StudentRecord,
-  StaffAccount,
-  loadPlatformState,
-  getActiveStudentId,
-  getActiveStaffSession,
-} from "@/lib/store";
-import { isSupabaseConfigured } from "@/lib/supabase";
-import StudentPortal from "@/components/StudentPortal";
-import CounselorDashboard from "@/components/CounselorDashboard";
-import AdminDashboard from "@/components/AdminDashboard";
 
-type RoleWorkspace = "siswa" | "guru_bk" | "admin";
-
-export default function HomePage() {
-  const [roleView, setRoleView] = useState<RoleWorkspace>("siswa");
-  const [mounted, setMounted] = useState(false);
-  const [state, setState] = useState<PlatformState | null>(null);
-  const [activeStudent, setActiveStudent] = useState<StudentRecord | null>(null);
-  const [activeStaff, setActiveStaff] = useState<StaffAccount | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-  }, []);
-
-  useEffect(() => {
-    if (!toastMsg) return;
-    const timer = setTimeout(() => setToastMsg(null), 3200);
-    return () => clearTimeout(timer);
-  }, [toastMsg]);
-
-  const refreshData = useCallback(() => {
-    const current = loadPlatformState();
-    setState(current);
-    const stuId = getActiveStudentId();
-    const foundStu = stuId
-      ? current.students.find((s) => s.id === stuId) || null
-      : null;
-    setActiveStudent(foundStu);
-    setActiveStaff(getActiveStaffSession());
-  }, []);
-
-  useEffect(() => {
-    setMounted(true);
-    refreshData();
-    const handleSync = () => refreshData();
-    window.addEventListener("jedadulu-sync", handleSync);
-    window.addEventListener("storage", handleSync);
-    return () => {
-      window.removeEventListener("jedadulu-sync", handleSync);
-      window.removeEventListener("storage", handleSync);
-    };
-  }, [refreshData]);
-
-  if (!mounted || !state) {
-    return (
-      <div className="min-h-screen bg-[#070b14] flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-sky-400 font-bold text-sm animate-pulse">
-          <div className="w-8 h-8 rounded-xl bg-brand-950 border border-sky-500/40 flex items-center justify-center">
-            ✦
-          </div>
-          Memuat Platform Layanan BK jedadulu.id...
-        </div>
-      </div>
-    );
-  }
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#070b14] text-slate-100">
-      {/* Top Navbar Profesional */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/85 border-b border-slate-800/80 print:hidden">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+      {/* Navbar Utama — Bersih & Production Ready */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-brand-950 border border-sky-500/40 shadow-lg shadow-sky-500/10 flex items-center justify-center shrink-0">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/20">
               <svg
                 viewBox="0 0 24 24"
-                className="w-6 h-6 stroke-sky-400"
-                strokeWidth="2.2"
+                className="w-5 h-5 stroke-white"
+                strokeWidth="2.4"
                 strokeLinecap="round"
                 fill="none"
               >
@@ -97,169 +36,423 @@ export default function HomePage() {
               </svg>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
-                  jedadulu<span className="text-sky-400">.id</span>
-                </span>
-                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300">
-                  <BookOpenCheck className="w-3 h-3" />
-                  Teknologi BK
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                FOMO atau Emang Aku Mau? · Decision Tree & Live Konseling SMA/MA
-              </p>
+              <span className="text-xl font-extrabold tracking-tight text-slate-900">
+                jedadulu<span className="text-indigo-600">.id</span>
+              </span>
+              <span className="hidden md:inline-block ml-2.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                Layanan Bimbingan & Konseling
+              </span>
             </div>
-          </div>
+          </Link>
 
-          {/* Switcher 3 Portal Utama: Siswa | Guru BK | Admin */}
-          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
-            <button
-              onClick={() => setRoleView("siswa")}
-              className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
-                roleView === "siswa"
-                  ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/70"
-              }`}
-            >
-              <GraduationCap className="w-4 h-4" />
-              <span>Portal Siswa</span>
-            </button>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+            <a href="#fitur" className="hover:text-indigo-600 transition">
+              Fitur Layanan
+            </a>
+            <a href="#alur" className="hover:text-indigo-600 transition">
+              Alur Decision Tree
+            </a>
+            <a href="#landasan" className="hover:text-indigo-600 transition">
+              Landasan BK
+            </a>
+            <a href="#etika" className="hover:text-indigo-600 transition">
+              Etika & Privasi
+            </a>
+          </nav>
 
-            <button
-              onClick={() => setRoleView("guru_bk")}
-              className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
-                roleView === "guru_bk"
-                  ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/70"
-              }`}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/masuk"
+              className="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
             >
-              <HeartHandshake className="w-4 h-4" />
-              <span>Dashboard Guru BK</span>
-            </button>
-
-            <button
-              onClick={() => setRoleView("admin")}
-              className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
-                roleView === "admin"
-                  ? "bg-purple-500 text-slate-950 shadow-md shadow-purple-500/20"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/70"
-              }`}
+              Masuk
+            </Link>
+            <Link
+              href="/siswa"
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-sm shadow-indigo-600/20 transition flex items-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Dashboard Admin</span>
-            </button>
+              <span>Mulai Refleksi</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Sub-bar Status Database & Info Cepat */}
-      <div className="bg-slate-950/60 border-b border-slate-900 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <Database className="w-3.5 h-3.5 text-sky-400" />
-            <span>
-              Status Database:{" "}
-              {isSupabaseConfigured ? (
-                <b className="text-emerald-400">
-                  Supabase PostgreSQL + Realtime Connected
-                </b>
-              ) : (
-                <b className="text-sky-300">
-                  Mode Hybrid (LocalStorage + Siap Sambung Supabase Cloud)
-                </b>
-              )}
-            </span>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-gradient-to-b from-white via-indigo-50/40 to-slate-50 border-b border-slate-200/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-xs font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              Media Layanan BK Interaktif untuk Siswa SMA/MA
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
+              FOMO atau{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-600">
+                Emang Aku Mau?
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
+              Sebelum terburu-buru mengikuti tren viral, membeli barang karena tekanan teman sebaya, atau terus-menerus membandingkan diri di media sosial—ambil jeda sejenak. Kenali motivasi di balik keinginanmu dan ambil keputusan secara sadar.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                href="/siswa"
+                className="px-7 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/20 transition flex items-center gap-2.5"
+              >
+                <span>Coba Decision Tree Sekarang</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                href="/masuk"
+                className="px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm sm:text-base border border-slate-300 shadow-sm transition"
+              >
+                Masuk Ruang Layanan
+              </Link>
+            </div>
+
+            <div className="pt-4 grid grid-cols-3 gap-4 max-w-lg border-t border-slate-200/80 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Tanpa Skor & Label</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Non-Diagnostik</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Privasi Terlindungi</span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-[11px]">
-            <span>
-              Kode Sekolah Demo: <b className="text-sky-300">JEDA-01</b>
-            </span>
-            <span>·</span>
-            <span>
-              Guru BK:{" "}
-              <b className="text-emerald-300">
-                guru@sekolah-contoh.sch.id / bk12345
-              </b>
-            </span>
-            <span>·</span>
-            <span>
-              Admin:{" "}
-              <b className="text-purple-300">
-                admin@sekolah-contoh.sch.id / admin12345
-              </b>
-            </span>
+
+          {/* Kartu Visual Preview Alur */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600">
+                    Alur Refleksi Terpandu
+                  </span>
+                  <h2 className="text-lg font-extrabold text-slate-900">
+                    Bagaimana Kamu Mengambil Keputusan?
+                  </h2>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                  4 Langkah
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  {
+                    step: "P1",
+                    title: "Kenali Sumber Dorongan",
+                    desc: "Memilah keinginan dari minat sendiri (otonomi) vs dorongan agar diterima kelompok.",
+                  },
+                  {
+                    step: "P2",
+                    title: "Amati Perasaan Saat Tidak Ikut",
+                    desc: "Mengidentifikasi apakah muncul rasa cemas berlebihan karena takut tertinggal.",
+                  },
+                  {
+                    step: "P3",
+                    title: "Timbang Waktu, Biaya, & Prioritas",
+                    desc: "Mengecek kesiapan uang saku dan jadwal kegiatan utama secara rasional.",
+                  },
+                  {
+                    step: "P4",
+                    title: "Uji Pikiran Otomatis",
+                    desc: "Mengevaluasi dampak jangka panjang lewat restrukturisasi kognitif & muhasabah.",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70"
+                  >
+                    <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                      {item.step}
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-indigo-950 text-white flex items-center justify-between gap-4">
+                <div className="text-xs">
+                  <span className="font-bold text-sky-300 block">
+                    Tersambung dengan Guru BK
+                  </span>
+                  <span className="text-indigo-100">
+                    Dilengkapi Jurnal Refleksi & Live Chat Konseling
+                  </span>
+                </div>
+                <Link
+                  href="/siswa"
+                  className="px-4 py-2 rounded-xl bg-white text-indigo-950 font-bold text-xs shrink-0 hover:bg-indigo-50 transition"
+                >
+                  Mulai →
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main Content Area (Full Width Web Layout, Tanpa Frame HP Sempit) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {roleView === "siswa" && (
-          <StudentPortal
-            state={state}
-            activeStudent={activeStudent}
-            onRefresh={refreshData}
-            showToast={showToast}
-          />
-        )}
+      {/* 3 Fitur Utama Layanan */}
+      <section id="fitur" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+            Fitur Utama Layanan BK
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Dirancang untuk Menemani Siswa Berpikir Jernih
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            Menghubungkan refleksi mandiri saat dorongan muncul dengan pendampingan konselor profesional di sekolah.
+          </p>
+        </div>
 
-        {roleView === "guru_bk" && (
-          <CounselorDashboard
-            state={state}
-            activeStaff={activeStaff}
-            onRefresh={refreshData}
-            showToast={showToast}
-          />
-        )}
-
-        {roleView === "admin" && (
-          <AdminDashboard
-            state={state}
-            activeStaff={activeStaff}
-            onRefresh={refreshData}
-            showToast={showToast}
-          />
-        )}
-      </main>
-
-      {/* Footer Akademik & Etika BK */}
-      <footer className="border-t border-slate-900 bg-slate-950/90 py-6 px-4 sm:px-6 lg:px-8 text-xs text-slate-400 print:hidden">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="font-bold text-slate-200">
-              jedadulu.id · &ldquo;FOMO atau Emang Aku Mau?&rdquo; — Website Layanan BK Interaktif Berbasis Decision Tree
-            </p>
-            <p>
-              Disusun oleh <b className="text-sky-300">Larasati Adi Ningrum</b> (NPM: 2411080031 · Kelas B/V) · Dosen Pengampu:{" "}
-              <b className="text-slate-200">Mega Aria Monica, M.Pd</b>
-            </p>
-            <p className="text-slate-500">
-              Program Studi Bimbingan dan Konseling Pendidikan Islam · Fakultas Tarbiyah dan Keguruan · UIN Raden Intan Lampung (2026)
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-sm hover:shadow-md transition space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+              <GitBranch className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">
+              1. Decision Tree &ldquo;FOMO atau Emang Aku Mau?&rdquo;
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Alur 4 pertanyaan reflektif berjenjang yang menghasilkan tiga jenis rekomendasi non-diagnostik: <b>Lanjutkan secara Sadar (Hasil A)</b>, <b>Tunda atau Sesuaikan (Hasil B)</b>, atau <b>Ambil Jeda Refleksi (Hasil C)</b>.
             </p>
           </div>
-          <div className="sm:text-right space-y-1 max-w-xs">
-            <span className="inline-block px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 font-semibold">
-              Bukan Diagnosis & Bukan Pengganti Konselor
+
+          <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-sm hover:shadow-md transition space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 text-sky-600 flex items-center justify-center">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">
+              2. Jurnal &ldquo;My Life, Their Highlight&rdquo;
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Sarana menulis refleksi perbandingan sosial untuk membedakan apa yang tampak di layar dengan kenyataan. Tersimpan aman di perangkatmu dan hanya dapat dibaca Guru BK jika kamu mengizinkannya.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-sm hover:shadow-md transition space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+              <MessageCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">
+              3. Konsultasi & Live Chat Guru BK
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Pintu masuk awal menuju layanan responsif. Siswa yang segan datang langsung dapat mengirim pengajuan jadwal konsultasi atau berdiskusi secara privat dengan Guru BK melalui Live Chat.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 Hasil Rekomendasi Decision Tree */}
+      <section id="alur" className="py-16 bg-white border-y border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="max-w-2xl space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+              Keluaran Non-Diagnostik
             </span>
-            <p className="text-[11px] text-slate-500">
-              Berpedoman pada Standar Etika ASCA (2022) & UNESCO (2023).
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              Tiga Muara Refleksi Tanpa Pelabelan
+            </h2>
+            <p className="text-sm text-slate-600">
+              Setiap rekomendasi dilengkapi langkah kecil yang praktis serta pengingat muhasabah (introspeksi diri) dan qana&apos;ah (merasa cukup).
             </p>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-3xl p-6 bg-emerald-50/70 border border-emerald-200 space-y-2">
+              <span className="inline-block text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-600 text-white">
+                Hasil A
+              </span>
+              <h3 className="text-lg font-extrabold text-emerald-950">
+                Lanjutkan Keputusan secara Sadar
+              </h3>
+              <p className="text-xs sm:text-sm text-emerald-900/80 leading-relaxed">
+                Diberikan ketika keinginanmu selaras dengan minat dan prioritas pribadi, serta masih terjangkau dari segi waktu maupun biaya.
+              </p>
+            </div>
+
+            <div className="rounded-3xl p-6 bg-amber-50/70 border border-amber-200 space-y-2">
+              <span className="inline-block text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-600 text-white">
+                Hasil B
+              </span>
+              <h3 className="text-lg font-extrabold text-amber-950">
+                Tunda atau Sesuaikan Keputusan
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-900/80 leading-relaxed">
+                Mengarahkanmu untuk menunda sejenak (misalnya 24 jam) atau menyesuaikan rencana saat waktu dan biaya belum sepenuhnya mendukung.
+              </p>
+            </div>
+
+            <div className="rounded-3xl p-6 bg-rose-50/70 border border-rose-200 space-y-2">
+              <span className="inline-block text-xs font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-rose-600 text-white">
+                Hasil C
+              </span>
+              <h3 className="text-lg font-extrabold text-rose-950">
+                Ambil Jeda untuk Refleksi
+              </h3>
+              <p className="text-xs sm:text-sm text-rose-900/80 leading-relaxed">
+                Mengajakmu berhenti sejenak, menarik napas, dan menulis jurnal saat dorongan ikut tren lebih dipicu oleh rasa takut tertinggal atau takut dinilai orang lain.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Landasan Teori BK & Etika */}
+      <section id="landasan" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          <div className="lg:col-span-5 space-y-4">
+            <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
+              Basis Ilmiah Bimbingan & Konseling
+            </span>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              Berpijak pada Kajian Teori & Etika Konselor
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Setiap pertanyaan dan fitur di dalam <b>jedadulu.id</b> dirancang berdasarkan sintesis literatur Bimbingan dan Konseling mutakhir serta nilai BK Pendidikan Islam.
+            </p>
+          </div>
+
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+              <Compass className="w-5 h-5 text-indigo-600" />
+              <h3 className="font-bold text-slate-900 text-sm">
+                Teori Determinasi Diri
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Membantu siswa memisahkan motivasi otonom (minat & nilai pribadi) dari kebutuhan keterhubungan sosial yang maladaptif di media sosial (Ajra et al., 2025).
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+              <Scale className="w-5 h-5 text-sky-600" />
+              <h3 className="font-bold text-slate-900 text-sm">
+                Teori Perbandingan Sosial
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Mendasari jurnal <i>&ldquo;My Life, Their Highlight&rdquo;</i> untuk meredam dampak perbandingan ke atas (upward social comparison) pada remaja (Septianto et al., 2025).
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+              <Brain className="w-5 h-5 text-emerald-600" />
+              <h3 className="font-bold text-slate-900 text-sm">
+                Restrukturisasi Kognitif & Regulasi Diri
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Menguji pikiran otomatis <i>&ldquo;kalau tidak ikut, aku ketinggalan&rdquo;</i> serta melatih jeda sebelum bertindak (Taufiqurrohman & Muwakhidah, 2025; Armilyana et al., 2025).
+              </p>
+            </div>
+
+            <div id="etika" className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+              <Lock className="w-5 h-5 text-amber-600" />
+              <h3 className="font-bold text-slate-900 text-sm">
+                Minimisasi Data & Batas Otomatisasi
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Mengikuti standar etika ASCA (2022) dan UNESCO (2023): tidak meminta data sensitif yang tidak perlu, bukan alat diagnosis, dan keputusan layanan tetap dipegang Guru BK.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Resmi */}
+      <footer className="mt-auto bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-slate-800">
+          <div className="md:col-span-6 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 stroke-white"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  fill="none"
+                >
+                  <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" />
+                </svg>
+              </div>
+              <span className="text-lg font-extrabold text-white">
+                jedadulu<span className="text-sky-400">.id</span>
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+              Website Layanan Bimbingan dan Konseling Interaktif Berbasis Decision Tree &ldquo;FOMO atau Emang Aku Mau?&rdquo; untuk Membantu Siswa SMA/MA Mengambil Keputusan Sadar di Media Sosial.
+            </p>
+          </div>
+
+          <div className="md:col-span-3 space-y-2 text-xs">
+            <h4 className="font-bold text-white uppercase tracking-wider">
+              Navigasi Layanan
+            </h4>
+            <ul className="space-y-1.5 text-slate-400">
+              <li>
+                <Link href="/siswa" className="hover:text-white transition">
+                  Ruang Refleksi Siswa
+                </Link>
+              </li>
+              <li>
+                <Link href="/masuk" className="hover:text-white transition">
+                  Portal Masuk Layanan
+                </Link>
+              </li>
+              <li>
+                <Link href="/guru-bk" className="hover:text-white transition">
+                  Ruang Konselor (Guru BK)
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" className="hover:text-white transition">
+                  Administrasi Sistem
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="md:col-span-3 space-y-2 text-xs">
+            <h4 className="font-bold text-white uppercase tracking-wider">
+              Informasi Akademik
+            </h4>
+            <p className="text-slate-400 leading-relaxed">
+              Pengembangan Teknologi Bimbingan dan Konseling<br />
+              Program Studi BK Pendidikan Islam<br />
+              Fakultas Tarbiyah dan Keguruan<br />
+              UIN Raden Intan Lampung (2026)
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <p>
+            Disusun oleh <b className="text-slate-300">Larasati Adi Ningrum</b> (NPM: 2411080031) · Dosen Pengampu: <b className="text-slate-300">Mega Aria Monica, M.Pd</b>
+          </p>
+          <p className="flex items-center gap-1.5">
+            <HeartHandshake className="w-4 h-4 text-indigo-400" />
+            <span>Media Refleksi Pendukung Layanan BK · Bukan Pengganti Konselor</span>
+          </p>
         </div>
       </footer>
-
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-5 right-5 z-50 max-w-md px-4 py-3 rounded-2xl bg-sky-500 text-slate-950 font-bold text-sm shadow-2xl shadow-sky-500/30 flex items-center gap-2.5 animate-bounce"
-        >
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
     </div>
   );
 }

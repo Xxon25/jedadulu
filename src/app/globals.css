@@ -3,12 +3,16 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: #070b14;
-  color: #e2e8f0;
+  background-color: #f8fafc;
+  color: #0f172a;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
