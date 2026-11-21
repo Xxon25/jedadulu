@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>jedadulu.id · FOMO atau Emang Aku Mau?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%2305174a'/%3E%3Cg stroke='white' stroke-width='7' stroke-linecap='round'%3E%3Cpath d='M50 20v60M20 50h60M29 29l42 42M71 29L29 71'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap">
+<style>
+/* Tata letak: ponsel di kiri (desktop) dan panel alur demo di kanan; di ponsel, aplikasi memenuhi layar dan panel turun ke bawah. */
+:root {
+  --stage: #121518;
+  --bg: #1b2024;
+  --bar: #201f1c;
+  --surface: #201f1c;
+  --line: #3b3e40;
+  --ink: #c9dcff;
+  --text: #e4e7ec;
+  --muted: #a9adb3;
+  --accent: #75a6dd;
+  --navy: #05174a;
+  --navy-line: #1d3377;
+  --pill: #3f5362;
+  --chip: #10212d;
+  --priv-line: #2f6a97;
+  --warn-bg: #3a2f12;
+  --warn-ink: #ffdf8a;
+  --ok-bg: #12332b;
+  --ok-ink: #8fe3c7;
+  --bezel: #2a2f33;
+  --font: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0; background: var(--stage); color: var(--text);
+  font-family: var(--font); font-size: 15px; line-height: 1.55;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3, p { margin: 0; }
+h2 { font-size: 27px; font-weight: 700; line-height: 1.18; color: var(--ink); letter-spacing: -.01em; text-wrap: balance; }
+h3 { font-size: 17px; font-weight: 700; color: var(--ink); }
+button { font: inherit; color: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.stage { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+
+/* Ponsel */
+.app { display: flex; flex-direction: column; background: var(--bg); border-radius: 22px; min-width: 0; position: relative; overflow: clip; }
+.appbar { position: sticky; top: 0; z-index: 5; background: var(--bar); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.brand { display: flex; align-items: center; gap: 14px; padding: 16px 18px 12px; }
+.logo { width: 44px; height: 44px; border-radius: 14px; background: var(--navy); display: grid; place-items: center; flex: none; }
+.logo svg { width: 26px; height: 26px; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.brand b { font-size: 24px; font-weight: 400; color: #bcd3f5; letter-spacing: .005em; flex: 1; min-width: 0; }
+.brand .chip { font-size: 11px; }
+.tabs-nav { display: flex; gap: 6px; overflow-x: auto; padding: 0 18px 12px; scrollbar-width: none; }
+.tabs-nav::-webkit-scrollbar { display: none; }
+.tabs-nav button { flex: none; border: 0; background: none; color: #b4b8be; font-weight: 700; font-size: 15px; padding: 10px 18px; border-radius: 99px; min-height: 44px; white-space: nowrap; }
+.tabs-nav button[aria-current="page"] { background: var(--pill); color: var(--ink); }
+.screen { flex: 1; padding: 22px 18px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.foot { border-top: 1px solid var(--line); padding: 18px; color: var(--muted); font-size: 13px; }
+.foot b { color: var(--text); }
+
+.badge, .chip { display: inline-block; padding: 6px 14px; border-radius: 99px; background: var(--chip); color: #bcd3ff; font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; align-self: flex-start; }
+.chip { padding: 3px 10px; letter-spacing: .02em; text-transform: none; font-weight: 700; white-space: nowrap; }
+.chip.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.chip.ok { background: var(--ok-bg); color: var(--ok-ink); }
+.eyebrow { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.lead { color: var(--muted); font-size: 16px; }
+.lead.big { font-size: 18px; line-height: 1.65; }
+.small { font-size: 13px; color: var(--muted); }
+.muted { color: var(--muted); }
+.hero { font-size: 42px; font-weight: 800; line-height: 1.04; letter-spacing: -.035em; color: #d3e2ff; text-wrap: balance; }
+.hero span { color: var(--accent); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card.center { text-align: center; align-items: center; padding: 28px 18px; }
+.card.center h2 { font-size: 32px; }
+.priv { background: #10212d; border-left: 6px solid var(--priv-line); border-radius: 4px 18px 18px 4px; padding: 14px 16px; color: #cfdcf0; }
+.note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 18px; padding: 14px 16px; font-weight: 500; }
+.note .big { display: block; font-size: 18px; font-weight: 700; }
+.note small { display: block; margin-top: 3px; font-size: 13px; font-weight: 400; }
+.note.info { background: #10212d; color: #cfdcf0; }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+.btn { min-height: 50px; padding: 12px 22px; border-radius: 99px; border: 1px solid var(--navy-line); background: var(--navy); color: #fff; font-weight: 700; font-size: 16px; text-align: center; }
+.btn.full { width: 100%; }
+.btn.sec { background: #10212d; border-color: #2b4252; color: #bcd3ff; }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.link { border: 0; background: none; color: var(--accent); min-height: 40px; padding: 4px; text-decoration: underline; text-underline-offset: 3px; font-weight: 500; font-size: 14px; align-self: flex-start; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > * { min-width: 0; }
+
+.fld { display: grid; gap: 8px; }
+label.q { font-weight: 700; color: var(--ink); font-size: 16px; line-height: 1.4; }
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  width: 100%; font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid #55595c; border-radius: 26px; padding: 15px 20px; min-height: 52px;
+}
+select { appearance: none; -webkit-appearance: none; padding-right: 46px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c9dcff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 9l7 7 7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 18px center; }
+select option { background: #201f1c; color: #e4e7ec; }
+textarea { min-height: 120px; border-radius: 26px; resize: vertical; line-height: 1.55; }
+::placeholder { color: #7d8187; }
+.check { display: flex; gap: 14px; align-items: flex-start; font-weight: 500; color: var(--ink); line-height: 1.5; }
+.check input { width: 24px; height: 24px; margin: 2px 0 0; accent-color: #5b86c9; flex: none; }
+
+.list { display: grid; gap: 10px; }
+.item { display: flex; gap: 12px; align-items: center; justify-content: space-between; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 14px 16px; }
+.item .t { display: block; font-weight: 700; color: var(--ink); }
+.item .d { display: block; font-size: 13px; color: var(--muted); }
+.res { border-radius: 24px; padding: 18px; display: grid; gap: 8px; border: 1px solid var(--line); }
+.res.A { background: var(--ok-bg); border-color: #1f5e4c; }
+.res.B { background: var(--warn-bg); border-color: #6b5518; }
+.res.C { background: #3a1c26; border-color: #7a3347; }
+.res h3 { font-size: 22px; color: #fff; }
+.res .tag { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #fff; opacity: .8; }
+
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.opt { min-height: 44px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-weight: 700; padding: 8px 14px; text-align: center; }
+.opt[aria-pressed="true"] { background: var(--pill); color: var(--ink); border-color: var(--pill); }
+
+.toast { position: absolute; left: 16px; right: 16px; bottom: 24px; z-index: 6; background: #e4e7ec; color: #14181b; padding: 11px 16px; border-radius: 16px; font-weight: 500; font-size: 14px; text-align: center; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: none; }
+
+/* Ruang Guru BK: layar lebar tanpa bingkai ponsel */
+body.is-guru .stage { max-width: 1040px; }
+body.is-guru .info { display: none; }
+body.is-guru .app { height: auto; min-height: 620px; border: 1px solid var(--line); border-radius: 22px; box-shadow: none; }
+body.is-guru .screen { overflow: visible; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stats .card { gap: 2px; padding: 14px; border-radius: 22px; }
+.stat { font-size: 34px; font-weight: 800; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.tbl table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.tbl tr:last-child td { border-bottom: 0; }
+
+/* Panel alur demo */
+.info { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.info h1 { font-size: clamp(32px, 5vw, 46px); font-weight: 800; color: #d3e2ff; letter-spacing: -.03em; line-height: 1.05; }
+.info .card { background: var(--bg); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.steps li { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); font-weight: 500; }
+.steps .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #55595c; flex: none; display: grid; place-items: center; font-size: 13px; line-height: 1; }
+.steps li.ok .dot { background: #5b86c9; border-color: #5b86c9; color: #04122e; }
+.steps li small { display: block; color: var(--muted); }
+
+@media (max-width: 899px) {
+  body { padding: 0; }
+  .app { border-radius: 0; min-height: 100vh; min-height: 100dvh; }
+  .info { padding: 24px max(18px, env(safe-area-inset-left, 0px)); }
+  body.is-guru .app { border-radius: 0; border-left: 0; border-right: 0; }
+}
+@media (min-width: 900px) {
+  .stage { grid-template-columns: 404px minmax(0, 1fr); align-items: start; gap: 48px; }
+  .app { height: 800px; border-radius: 40px; border: 8px solid var(--bezel); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+  .screen { overflow-y: auto; }
+  .info { padding-top: 24px; position: sticky; top: 24px; }
+  body.is-guru .stage { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="stage">
+  <section class="app" aria-label="Prototipe website jedadulu.id">
+    <div class="appbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></span>
+        <b>jedadulu.id</b>
+        <button class="btn link" id="exitBtn" data-act="exit" type="button" hidden>Keluar</button>
+      </div>
+      <nav class="tabs-nav" id="tabs" aria-label="Menu utama"></nav>
+    </div>
+    <div class="screen" id="screen"></div>
+    <div class="foot"><b>jedadulu.id</b> · FOMO atau Emang Aku Mau? · Media refleksi awal layanan Bimbingan dan Konseling. Bukan diagnosis dan bukan pengganti Guru BK.</div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </section>
+
+  <aside class="info">
+    <div style="display:grid;gap:10px">
+      <span class="eyebrow">Prototipe I · Pertemuan 9</span>
+      <h1>jedadulu.id</h1>
+      <p class="lead"><b style="color:var(--ink)">FOMO atau Emang Aku Mau?</b> Website layanan BK interaktif berbasis decision tree untuk membantu siswa SMA/MA berjeda, menimbang dorongannya, dan memutuskan dengan sadar di media sosial. Coba semua layar di ponsel di samping; seluruh isinya data contoh.</p>
+    </div>
+
+    <div class="card">
+      <h3>Alur demo</h3>
+      <ol class="steps" id="steps"></ol>
+      <button class="btn ghost" data-act="reset" type="button">Mulai ulang demo</button>
+    </div>
+
+    <div class="card">
+      <h3>Akun contoh untuk mencoba</h3>
+      <ul class="plain">
+        <li>Siswa mendaftar dengan kode sekolah <b>JEDA-01</b></li>
+        <li>Guru BK masuk dengan email <b>guru@sekolah-contoh.sch.id</b> dan kata sandi <b>bk12345</b></li>
+      </ul>
+      <p class="small">Login guru dan penerusan data ke Guru BK di prototipe ini adalah simulasi di dalam satu halaman. Versi jadi memakai server dan pembatasan akses.</p>
+    </div>
+
+    <p class="small">Disusun oleh Larasati Adi Ningrum · BKPI, UIN Raden Intan Lampung · Pengembangan Teknologi BK. Produk ini tidak mendiagnosis, tidak melabeli, tidak memakai AI generatif, dan tidak menggantikan konseling oleh Guru BK.</p>
+  </aside>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var KEY = 'jedadulu-draft';
+
+  /* ====== Konten (sesuai proposal: 4 pertanyaan decision tree, 3 hasil A/B/C) ====== */
+  var SIT = ['Tren yang sedang ramai', 'Barang yang sedang viral', 'Acara atau kegiatan bersama teman', 'Terus-menerus mengecek unggahan'];
+  var QS = [
+    { q: 'Apa yang paling mendorongmu mengikuti tren atau keinginan ini?',
+      o: ['Memang kuinginkan sejak awal', 'Mulai ingin setelah lihat unggahan orang', 'Takut dianggap ketinggalan atau kurang gaul'] },
+    { q: 'Bagaimana perasaanmu jika tidak mengikutinya?',
+      o: ['Biasa saja, tidak merasa kehilangan', 'Agak kepikiran, tapi masih bisa kuterima', 'Cemas dan tidak nyaman karena tertinggal'] },
+    { q: 'Apakah kamu sudah mempertimbangkan waktu, biaya, dan prioritasmu?',
+      o: ['Sudah, dan masih terjangkau', 'Baru sebagian', 'Belum sama sekali'] },
+    { q: 'Apakah keputusan ini sudah kamu pikirkan matang dan tidak berdampak negatif bagi dirimu?',
+      o: ['Ya, aku yakin tidak berdampak negatif', 'Aku masih ragu', 'Mungkin berdampak negatif bagi diriku'] }
+  ];
+  var HASIL = {
+    A: { title: 'Lanjutkan Keputusan secara Sadar',
+      text: 'Kamu sudah memahami kebutuhanmu dan mempertimbangkan konsekuensinya. Keputusan ini sejalan dengan tujuan dan nilai pribadimu.',
+      tips: ['Tetapkan batas waktu atau biaya sebelum melanjutkan.', 'Setelah itu, nikmati tanpa membandingkan diri dengan orang lain.'],
+      mu: 'Muhasabah singkat: apakah pilihan ini membuatku bersyukur dan merasa cukup (qana’ah)?' },
+    B: { title: 'Tunda atau Sesuaikan Keputusan',
+      text: 'Kamu sudah punya tujuan, tetapi masih perlu mempertimbangkan waktu, biaya, atau cara yang lebih sesuai. Tidak apa-apa menunggu sebentar atau menyesuaikan rencana agar lebih matang.',
+      tips: ['Tunda keputusan 24 jam, lalu tanyakan lagi pada dirimu.', 'Cek dulu kondisi uang dan waktumu.'],
+      mu: 'Muhasabah singkat: apa yang perlu kurapikan dulu sebelum memutuskan?' },
+    C: { title: 'Ambil Jeda untuk Refleksi',
+      text: 'Keinginanmu tampaknya lebih didorong rasa takut tertinggal atau takut dinilai orang. Coba berhenti sejenak, tarik napas, dan tanyakan pada dirimu: “Apa yang sebenarnya aku inginkan?”',
+      tips: ['Tutup aplikasi media sosial selama 10 menit.', 'Tulis perasaanmu di jurnal “My Life, Their Highlight”.'],
+      mu: 'Muhasabah singkat: apakah aku sedang mengejar kebutuhanku, atau pandangan orang lain?' }
+  };
+  var TOPIK = ['Dorongan ikut tren atau membeli barang viral', 'Merasa tertinggal dari teman', 'Membandingkan diri dengan unggahan orang lain', 'Mengatur waktu dan uang', 'Hal lain yang ingin kuceritakan'];
+  var GURU = { email: 'guru@sekolah-contoh.sch.id', pw: 'bk12345', name: 'Bu Dewi' };
+  var TABS = [['beranda', 'Beranda'], ['tree', 'Decision Tree'], ['jurnal', 'Jurnal Refleksi'], ['konsul', 'Konsultasi'], ['login', 'Login Guru BK']];
+
+  /* ====== Status ====== */
+  function freshU() {
+    return { profile: null, agree: false, sit: -1, ans: [-1, -1, -1, -1], done: false, res: null,
+      j: { a: '', b: '', c: '' }, jShare: false, jSaved: false,
+      topic: -1, note: '', cAgree: false, sent: false, draftOk: true };
+  }
+  function freshG() {
+    return { in: false, seen: false, tab: 'hasil', fKelas: '', fHasil: '', view: null, fails: 0, lockUntil: 0, myStatus: 'Baru',
+      codes: [{ code: 'JEDA-01', aktif: true, note: 'Kelas X–XII, SMA Contoh' }],
+      reqs: [
+        { id: 'r1', nick: 'Dinda', cls: 'XI', topic: 'Merasa tertinggal dari teman', note: 'Aku sering kepikiran kalau melihat unggahan teman jalan-jalan.', status: 'Baru' },
+        { id: 'r2', nick: 'Yoga', cls: 'X', topic: 'Mengatur waktu dan uang', note: '', status: 'Dijadwalkan' }
+      ] };
+  }
+  var U = freshU(), G = freshG(), screen = 'beranda', pending = null;
+
+  var DUMMY = [
+    { id: 'd1', nick: 'Dinda', cls: 'XI', hasil: 'C', jshare: true, j: { a: 'Teman-teman mengunggah foto konser.', b: 'Sedih dan merasa ketinggalan.', c: 'Mungkin mereka juga capek antre dan uangnya pas-pasan.' } },
+    { id: 'd2', nick: 'Raka', cls: 'X', hasil: 'B', jshare: false },
+    { id: 'd3', nick: 'Salsa', cls: 'XI', hasil: 'A', jshare: true, j: { a: 'Teman mengunggah sepatu baru yang sedang viral.', b: 'Biasa saja, sepatuku masih bagus.', c: 'Mungkin mereka menabung lama untuk membelinya.' } },
+    { id: 'd4', nick: 'Bima', cls: 'XII', hasil: 'C', jshare: false },
+    { id: 'd5', nick: 'Nayla', cls: 'X', hasil: null },
+    { id: 'd6', nick: 'Fajar', cls: 'XII', hasil: 'A', jshare: false },
+    { id: 'd7', nick: 'Putri', cls: 'XI', hasil: 'B', jshare: true, j: { a: 'Banyak yang ikut tantangan joget di media sosial.', b: 'Pengin ikut, tapi ragu.', c: 'Mungkin tidak semua nyaman, hanya terlihat senang.' } },
+    { id: 'd8', nick: 'Yoga', cls: 'X', hasil: 'B', jshare: false }
+  ];
+
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!d) return;
+      if (typeof d.sit === 'number') U.sit = d.sit;
+      if (Array.isArray(d.ans) && d.ans.length === 4) U.ans = d.ans.map(function (x) { return typeof x === 'number' ? x : -1; });
+      if (d.j) U.j = { a: String(d.j.a || ''), b: String(d.j.b || ''), c: String(d.j.c || '') };
+      U.jShare = !!d.jShare;
+    } catch (e) {}
+  }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify({ sit: U.sit, ans: U.ans, j: U.j, jShare: U.jShare })); U.draftOk = true; }
+    catch (e) { U.draftOk = false; }
+  }
+  load();
+
+  function allAnswered() { return U.sit >= 0 && U.ans.every(function (x) { return x >= 0; }); }
+  /* Logika percabangan: ditulis terbuka agar mudah ditelaah Guru BK. */
+  function outcome(a) {
+    if (a[0] === 2 || a[1] === 2) return 'C';
+    if (a[0] === 0 && a[1] === 0 && a[2] === 0 && a[3] === 0) return 'A';
+    return 'B';
+  }
+
+  /* ====== Data untuk Guru BK ====== */
+  function students() {
+    var list = DUMMY.slice();
+    if (U.profile) {
+      list.unshift({ id: 'me', nick: U.profile.nick, cls: U.profile.cls, hasil: U.done ? U.res : null,
+        jshare: U.jShare && !!(U.j.a + U.j.b + U.j.c).trim() && U.jSaved, j: U.j, me: true });
+    }
+    return list;
+  }
+  function requests() {
+    var list = G.reqs.slice();
+    if (U.sent && U.profile) {
+      list.unshift({ id: 'me', nick: U.profile.nick, cls: U.profile.cls, topic: TOPIK[U.topic], note: U.note, status: G.myStatus, me: true });
+    }
+    return list;
+  }
+
+  /* ====== Tampilan ====== */
+  function selectField(id, label, list, val, ph, dt) {
+    return '<div class="fld"><label class="q" for="' + id + '">' + label + '</label><select id="' + id + '" data-t="' + dt + '"><option value="-1"' + (val < 0 ? ' selected' : '') + '>' + ph + '</option>' +
+      list.map(function (t, i) { return '<option value="' + i + '"' + (val === i ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>';
+  }
+  function opts(list, sel) { return list.map(function (v) { return '<option' + (v === sel ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join(''); }
+  var V = {};
+
+  V.beranda = function () {
+    var p = U.profile;
+    var h = '<span class="badge">✦ Ruang jeda digital untuk siswa SMA/MA</span>' +
+      '<h1 class="hero">FOMO atau <span>Emang Aku Mau?</span></h1>' +
+      '<p class="lead big">Sebelum ikut tren, membeli sesuatu, atau terus mengikuti unggahan orang lain, ambil jeda sebentar. Kenali alasanmu dan pilih dengan lebih sadar.</p>' +
+      '<div class="row"><button class="btn" data-act="go" data-to="tree" type="button">Mulai refleksi →</button><button class="btn sec" data-act="go" data-to="jurnal" type="button">Buka jurnal ✎</button></div>' +
+      '<p class="small">' + (p ? 'Masuk sebagai <b>' + esc(p.nick) + '</b> · kelas ' + esc(p.cls) + '. Data hanya dapat dilihat Guru BK yang berwenang di sekolahmu.' :
+        'Isi identitas dan persetujuan terlebih dahulu. Data hanya dapat dilihat Guru BK yang berwenang di sekolahmu.') + '</p>';
+    if (p) {
+      var rows = [
+        ['tree', 'Decision Tree', U.done ? 'Hasil ' + U.res + ' · ' + HASIL[U.res].title : 'Jawab empat pertanyaan reflektif', U.done],
+        ['jurnal', 'Jurnal Refleksi', 'Tulis “My Life, Their Highlight”', U.jSaved],
+        ['konsul', 'Konsultasi', 'Kamu yang memilih apa yang dikirim', U.sent]
+      ];
+      h += '<div class="list">' + rows.map(function (x) {
+        return '<button class="item" data-act="go" data-to="' + x[0] + '" type="button"><span><span class="t">' + x[1] + '</span><span class="d">' + esc(x[2]) + '</span></span>' +
+          '<span class="chip' + (x[3] ? ' ok' : ' warn') + '">' + (x[3] ? 'Sudah' : 'Belum') + '</span></button>';
+      }).join('') + '</div>';
+    }
+    h += '<div class="card center"><span class="eyebrow">jedadulu.id · Ruang refleksi</span><h2>Tarik napas.</h2><p class="lead">Hembuskan pelan. Lalu tanyakan pada dirimu: “Apa yang sebenarnya aku inginkan?”</p></div>';
+    return h;
+  };
+
+  V.identitas = function () {
+    return '<div><span class="badge">Identitas &amp; persetujuan</span></div><h2>Kenalan dulu, ya.</h2>' +
+      '<p class="lead">Isi identitas dan persetujuan terlebih dahulu supaya Guru BK sekolahmu dapat melihat hasil refleksimu.</p>' +
+      '<div class="card">' +
+      '<div class="fld"><label class="q" for="nm">Nama</label><input type="text" id="nm" maxlength="40" autocomplete="off" placeholder="Nama lengkap atau nama panggilan"></div>' +
+      '<div class="fld"><label class="q" for="cls">Kelas</label><select id="cls"><option value="">Pilih kelas</option><option>X</option><option>XI</option><option>XII</option></select></div>' +
+      '<div class="fld"><label class="q" for="sch">Kode sekolah</label><input type="text" id="sch" maxlength="12" autocomplete="off" placeholder="Dari Guru BK sekolahmu"><span class="small">Kode contoh untuk mencoba: JEDA-01</span></div>' +
+      '<div class="priv"><b>Data yang dicatat:</b> nama, kelas, jawaban decision tree, jurnal (hanya bila kamu izinkan), dan permintaan konsultasi.<br><b>Yang bisa melihat:</b> Guru BK sekolahmu yang berwenang. Guru mata pelajaran tidak punya akses.<br><b>Tidak ada</b> iklan, pelacak pihak ketiga, atau penjualan data. Di sekolah nyata, persetujuan sekolah serta orang tua/wali juga diperlukan.</div>' +
+      '<label class="check"><input type="checkbox" id="agree"' + (U.agree ? ' checked' : '') + '><span>Aku sudah membaca dan setuju datanya dipakai seperti di atas.</span></label>' +
+      '<button class="btn full" id="startBtn" data-act="start" type="button"' + (U.agree ? '' : ' disabled') + '>Setuju &amp; mulai →</button>' +
+      '<button class="btn link" data-act="demoId" type="button">Isi data contoh (demo)</button></div>';
+  };
+
+  function resultView() {
+    var r = HASIL[U.res];
+    return '<div><span class="badge">Hasil refleksi</span></div><h2>Ini gambaran dari jawabanmu.</h2>' +
+      '<div class="res ' + U.res + '"><span class="tag">Hasil ' + U.res + '</span><h3>' + esc(r.title) + '</h3><p>' + esc(r.text) + '</p></div>' +
+      '<div class="card"><h3>Langkah kecil yang bisa dicoba</h3><ul class="plain">' + r.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul><p class="small">' + esc(r.mu) + '</p></div>' +
+      '<p class="small">Situasi: ' + esc(SIT[U.sit]) + '. Catatan: ini saran refleksi, bukan diagnosis dan bukan label. Guru BK yang memutuskan tindak lanjut layanan.</p>' +
+      '<button class="btn full" data-act="go" data-to="jurnal" type="button">Tulis refleksi di jurnal ✎</button>' +
+      '<button class="btn sec full" data-act="go" data-to="konsul" type="button">Bicara dengan Guru BK</button>' +
+      '<button class="btn link" data-act="retry" type="button">Ulangi dengan situasi lain</button>';
+  }
+
+  V.tree = function () {
+    if (U.done) return resultView();
+    return '<div><span class="badge">Decision Tree</span></div><h2>Ini ruang aman untuk berpikir, bukan untuk menghakimi.</h2>' +
+      '<p class="lead">Pilih jawaban yang paling menggambarkan keadaanmu saat ini.</p>' +
+      '<div class="card"><div class="priv">Privasi: jawaban akan tersimpan bersama identitas yang kamu berikan dan dapat dibaca Guru BK sekolahmu sesuai persetujuanmu.</div>' +
+      selectField('sit', 'Situasi yang sedang kamu hadapi', SIT, U.sit, 'Pilih situasi', 's') +
+      QS.map(function (q, i) { return selectField('q' + i, (i + 1) + '. ' + q.q, q.o, U.ans[i], 'Pilih jawaban', i); }).join('') +
+      '<button class="btn full" id="seeBtn" data-act="see" type="button"' + (allAnswered() ? '' : ' disabled') + '>Lihat hasil refleksi →</button>' +
+      '<button class="btn link" data-act="demoTree" type="button">Isi jawaban contoh (demo)</button>' +
+      '<p class="small">Tidak ada skor dan tidak ada label. Hasilnya berupa saran refleksi, bukan diagnosis.</p></div>';
+  };
+
+  V.jurnal = function () {
+    return '<div><span class="badge">Jurnal pribadi</span></div><h2>My Life, Their Highlight</h2>' +
+      '<p class="lead">Unggahan orang lain hanya menampilkan sebagian cerita. Beri ruang untuk ceritamu sendiri.</p>' +
+      '<div class="card">' +
+      '<div class="fld"><label class="q" for="ja">1. Hal apa yang kamu lihat atau temui di media sosial?</label><textarea id="ja" data-j="a" placeholder="Contoh: teman-teman mengunggah kegiatan atau barang yang sedang tren...">' + esc(U.j.a) + '</textarea></div>' +
+      '<div class="fld"><label class="q" for="jb">2. Apa yang kamu rasakan setelah melihatnya?</label><textarea id="jb" data-j="b" placeholder="Ceritakan perasaanmu tanpa perlu menghakimi diri sendiri...">' + esc(U.j.b) + '</textarea></div>' +
+      '<div class="fld"><label class="q" for="jc">3. Bagian apa dari cerita mereka yang mungkin tidak terlihat di unggahan?</label><textarea id="jc" data-j="c" placeholder="Contoh: usaha, biaya, atau kesulitan yang tidak diperlihatkan...">' + esc(U.j.c) + '</textarea></div>' +
+      '<label class="check"><input type="checkbox" id="jshare"' + (U.jShare ? ' checked' : '') + '><span>Izinkan Guru BK membaca jurnal ini. Jika tidak dicentang, jurnal hanya untukmu.</span></label>' +
+      '<div class="row"><button class="btn" data-act="saveJ" type="button">Simpan jurnal</button><button class="btn ghost" data-act="delJ" type="button">Hapus jurnal</button></div>' +
+      '<p class="small">' + (U.draftOk ? 'Draf tersimpan otomatis di perangkat ini.' : 'Draf disimpan di perangkat ini bila peramban mengizinkan.') + '</p></div>' +
+      '<div class="note"><span class="big">Merasa tidak aman?</span>Jika kamu merasa tidak aman atau ingin menyakiti dirimu, segera hubungi Guru BK atau orang dewasa yang kamu percaya. Jurnal ini bukan layanan krisis dan isinya tidak dibaca oleh sistem.</div>';
+  };
+
+  V.konsul = function () {
+    if (U.sent) {
+      return '<div><span class="badge">Konsultasi</span></div><h2>Permintaanmu sudah dibuat.</h2>' +
+        '<div class="note info"><span class="big">Status: ' + esc(G.myStatus) + ' (simulasi)</span>Topik: ' + esc(TOPIK[U.topic]) + '. Di prototipe ini permintaan hanya tampil di Ruang Guru BK dalam halaman ini. Pada produk jadi, Guru BK yang memutuskan tindak lanjut.</div>' +
+        '<button class="btn sec" data-act="newReq" type="button">Buat permintaan baru</button>';
+    }
+    return '<div><span class="badge">Konsultasi</span></div><h2>Ingin membicarakannya bersama Guru BK?</h2>' +
+      '<p class="lead">Kamu boleh menyiapkan topik yang ingin dibahas. Formulir ini akan tersimpan sebagai permintaan konsultasi untuk Guru BK sekolahmu.</p>' +
+      '<div class="card">' + selectField('topic', 'Topik yang ingin dibicarakan', TOPIK, U.topic, 'Pilih topik', 'topic') +
+      '<div class="fld"><label class="q" for="cnote">Ringkasan singkat (opsional)</label><textarea id="cnote" placeholder="Tuliskan hal yang ingin kamu sampaikan...">' + esc(U.note) + '</textarea></div>' +
+      '<label class="check"><input type="checkbox" id="cagree"' + (U.cAgree ? ' checked' : '') + '><span>Saya setuju mengirim permintaan konsultasi ini kepada Guru BK sekolah saya.</span></label>' +
+      '<button class="btn" data-act="send" type="button">Kirim permintaan →</button></div>' +
+      '<p class="small">Butuh bantuan segera? Hubungi Guru BK atau orang dewasa yang kamu percaya. Website ini bukan layanan krisis.</p>';
+  };
+
+  V.login = function () {
+    return '<div class="card"><span class="badge">Akses terbatas</span><h2>Ruang Guru BK</h2>' +
+      '<p class="lead">Masuk menggunakan akun Guru BK yang telah didaftarkan oleh pengelola.</p>' +
+      '<div id="gerr" class="note" role="alert" hidden></div>' +
+      '<div class="fld"><label class="q" for="gem">Email Guru BK</label><input type="email" id="gem" autocomplete="off" placeholder="email@sekolah.sch.id"></div>' +
+      '<div class="fld"><label class="q" for="gpw">Kata sandi</label><input type="password" id="gpw" autocomplete="off" placeholder="Kata sandi"></div>' +
+      '<div class="row"><button class="btn" data-act="login" type="button">Login Guru BK</button><button class="btn link" data-act="loginDemo" type="button">Isi akun contoh (simulasi)</button></div>' +
+      '<p class="small">Login ini simulasi untuk prototipe. Versi jadi memakai server, kata sandi terenkripsi, dan pembatasan akses di sisi server.</p></div>';
+  };
+
+  V.guru = function () {
+    var st = students(), rq = requests();
+    var sudah = st.filter(function (x) { return x.hasil; }).length;
+    var baru = rq.filter(function (x) { return x.status === 'Baru'; }).length;
+    var tabs = [['hasil', 'Hasil siswa'], ['konsul', 'Konsultasi (' + baru + ' baru)'], ['kode', 'Kode sekolah']];
+    var body;
+    if (G.tab === 'konsul') {
+      body = (rq.length ? '<div class="list">' + rq.map(function (r) {
+        return '<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h3>' + esc(r.nick) + ' · ' + esc(r.cls) + (r.me ? ' (kamu, demo)' : '') + '</h3><span class="chip' + (r.status === 'Baru' ? ' warn' : '') + '">' + r.status + '</span></div>' +
+          '<p><b>Topik:</b> ' + esc(r.topic) + '</p>' + (r.note ? '<p class="muted">“' + esc(r.note) + '”</p>' : '<p class="small">Tanpa ringkasan.</p>') +
+          '<div class="seg">' + ['Baru', 'Dijadwalkan', 'Selesai'].map(function (s) {
+            return '<button class="opt" data-act="reqst" data-id="' + r.id + '" data-v="' + s + '" aria-pressed="' + (r.status === s) + '" type="button">' + s + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') + '</div>' : '<p class="lead">Belum ada permintaan konsultasi.</p>');
+    } else if (G.tab === 'kode') {
+      body = '<p class="lead">Berikan kode ini kepada siswa untuk mendaftar. Nonaktifkan kode yang sudah tidak dipakai.</p>' +
+        '<div class="list">' + G.codes.map(function (c) {
+          return '<div class="item"><span><span class="t" style="user-select:all">' + esc(c.code) + '</span><span class="d">' + esc(c.note) + '</span></span>' +
+            '<span class="row" style="flex-wrap:nowrap;gap:4px"><span class="chip' + (c.aktif ? ' ok' : ' warn') + '">' + (c.aktif ? 'Aktif' : 'Nonaktif') + '</span>' +
+            '<button class="btn link" data-act="togglecode" data-code="' + esc(c.code) + '" type="button">' + (c.aktif ? 'Nonaktifkan' : 'Aktifkan') + '</button></span></div>';
+        }).join('') + '</div><button class="btn" data-act="newcode" type="button">Buat kode baru</button>';
+    } else {
+      var rows = st.filter(function (x) { return (!G.fKelas || x.cls === G.fKelas) && (!G.fHasil || x.hasil === G.fHasil); });
+      var det = '';
+      if (G.view) {
+        var v = st.filter(function (x) { return x.id === G.view; })[0];
+        if (v && v.jshare) {
+          det = '<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h3>Jurnal ' + esc(v.nick) + ' · ' + esc(v.cls) + '</h3><button class="btn link" data-act="closej" type="button">Tutup</button></div>' +
+            '<p class="small">Dibagikan atas izin siswa.</p><p><b>Dilihat:</b> ' + esc(v.j.a) + '</p><p><b>Dirasakan:</b> ' + esc(v.j.b) + '</p><p><b>Tidak terlihat di unggahan:</b> ' + esc(v.j.c) + '</p></div>';
+        }
+      }
+      body = '<div class="filters"><div class="fld"><label class="q" for="fKelas">Kelas</label><select id="fKelas"><option value="">Semua kelas</option>' + opts(['X', 'XI', 'XII'], G.fKelas) + '</select></div>' +
+        '<div class="fld"><label class="q" for="fHasil">Hasil refleksi</label><select id="fHasil"><option value="">Semua hasil</option>' + ['A', 'B', 'C'].map(function (k) { return '<option value="' + k + '"' + (G.fHasil === k ? ' selected' : '') + '>Hasil ' + k + ' · ' + esc(HASIL[k].title) + '</option>'; }).join('') + '</select></div></div>' + det +
+        '<div class="tbl"><table><thead><tr><th>Siswa</th><th>Kelas</th><th>Hasil refleksi</th><th>Jurnal</th></tr></thead><tbody>' +
+        (rows.length ? rows.map(function (x) {
+          var hs = x.hasil ? '<span class="chip">Hasil ' + x.hasil + '</span> ' + esc(HASIL[x.hasil].title) : '<span class="muted">Belum mengisi</span>';
+          var jr = !x.hasil && !x.jshare ? '<span class="muted">–</span>' : x.jshare ? '<button class="btn link" data-act="readj" data-id="' + x.id + '" type="button">Baca jurnal</button>' : '<span class="chip warn">Tidak dibagikan</span>';
+          return '<tr><td><b>' + esc(x.nick) + '</b>' + (x.me ? ' <span class="chip">kamu (demo)</span>' : '') + '</td><td>' + esc(x.cls) + '</td><td>' + hs + '</td><td>' + jr + '</td></tr>';
+        }).join('') : '<tr><td colspan="4" class="muted">Tidak ada siswa yang cocok dengan filter.</td></tr>') +
+        '</tbody></table></div>' +
+        '<p class="small">Guru hanya membaca jurnal yang siswa izinkan. Tidak ada skor total, label, atau peringkat antarsiswa. Guru mata pelajaran tidak punya akses. Nama siswa selain milikmu adalah data contoh.</p>';
+    }
+    return '<div><span class="eyebrow">Ruang Guru BK · SMA Contoh</span><h2>Halo, ' + esc(GURU.name) + '</h2></div>' +
+      '<div class="stats"><div class="card"><span class="stat">' + st.length + '</span><span class="small">siswa terdaftar</span></div>' +
+      '<div class="card"><span class="stat">' + sudah + '</span><span class="small">sudah refleksi</span></div>' +
+      '<div class="card"><span class="stat">' + baru + '</span><span class="small">konsultasi baru</span></div></div>' +
+      '<div class="tabs">' + tabs.map(function (t) { return '<button class="opt" data-act="gtab" data-t="' + t[0] + '" aria-pressed="' + (G.tab === t[0]) + '" type="button">' + t[1] + '</button>'; }).join('') + '</div>' + body;
+  };
+
+  /* ====== Render ====== */
+  function stepsHtml() {
+    var st = [
+      ['Isi identitas dan persetujuan', 'Beranda', !!U.profile],
+      ['Jawab Decision Tree dan lihat hasil A/B/C', 'Empat pertanyaan reflektif', U.done],
+      ['Tulis jurnal “My Life, Their Highlight”', 'Jurnal Refleksi', U.jSaved],
+      ['Kirim permintaan konsultasi', 'Konsultasi', U.sent],
+      ['Guru BK melihat data siswa', 'Login Guru BK', G.seen]
+    ];
+    return st.map(function (x) {
+      return '<li class="' + (x[2] ? 'ok' : '') + '"><span class="dot">' + (x[2] ? '✓' : '') + '</span><span>' + x[0] + '<small>' + x[1] + '</small></span></li>';
+    }).join('');
+  }
+  function tabsHtml() {
+    return TABS.map(function (t) {
+      var cur = screen === t[0] || (screen === 'identitas' && t[0] === 'beranda');
+      return '<button data-act="go" data-to="' + t[0] + '" type="button"' + (cur ? ' aria-current="page"' : '') + '>' + t[1] + '</button>';
+    }).join('');
+  }
+  var toastT;
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
+  function render(top) {
+    if (screen === 'guru' && !G.in) screen = 'login';
+    if (screen === 'login' && G.in) screen = 'guru';
+    if ((screen === 'tree' || screen === 'jurnal' || screen === 'konsul') && !U.profile) { pending = screen; screen = 'identitas'; }
+    var isGuru = G.in && screen === 'guru';
+    document.body.classList.toggle('is-guru', isGuru);
+    $('#screen').innerHTML = V[screen]();
+    $('#tabs').innerHTML = tabsHtml();
+    $('#tabs').hidden = isGuru;
+    $('#exitBtn').hidden = !(G.in || U.profile);
+    $('#steps').innerHTML = stepsHtml();
+    var cur = $('#tabs [aria-current="page"]');
+    if (cur) { var nv = $('#tabs'); nv.scrollLeft = Math.max(0, cur.offsetLeft - 18); }
+    if (top) {
+      $('#screen').scrollTop = 0;
+      if (!window.matchMedia('(min-width: 900px)').matches) window.scrollTo({ top: 0 });
+    }
+  }
+  function go(to) { screen = to; render(true); }
+
+  /* ====== Login guru (simulasi) ====== */
+  function setErr(msg) { var e = $('#gerr'); if (e) { e.hidden = false; e.textContent = msg; } }
+  function doLogin() {
+    var em = (($('#gem') || {}).value || '').trim().toLowerCase(), pw = ($('#gpw') || {}).value || '';
+    if (G.lockUntil > Date.now()) { setErr('Terlalu banyak percobaan. Coba lagi sekitar 30 detik lagi.'); return; }
+    if (!em || !pw) { setErr('Isi email dan kata sandi.'); return; }
+    if (em === GURU.email && pw === GURU.pw) { G.in = true; G.seen = true; G.fails = 0; screen = 'guru'; render(true); }
+    else {
+      G.fails++;
+      if (G.fails >= 5) { G.lockUntil = Date.now() + 30000; G.fails = 0; }
+      setErr('Email atau kata sandi salah.');
+    }
+  }
+
+  /* ====== Aksi ====== */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var a = el.getAttribute('data-act');
+    if (a === 'go') {
+      var to = el.getAttribute('data-to');
+      if (to === 'login' && G.in) to = 'guru';
+      go(to);
+    }
+    else if (a === 'demoId') { $('#nm').value = 'Rani'; $('#cls').value = 'XI'; $('#sch').value = 'JEDA-01'; }
+    else if (a === 'start') {
+      if (!U.agree) return;
+      var nm = ($('#nm').value || '').trim(), cls = $('#cls').value, sch = ($('#sch').value || '').trim().toUpperCase();
+      if (!nm) { toast('Isi namamu dulu.'); return; }
+      if (!cls) { toast('Pilih kelasmu dulu.'); return; }
+      if (!G.codes.some(function (c) { return c.aktif && c.code === sch; })) { toast('Kode sekolah tidak ditemukan atau nonaktif. Minta kode ke Guru BK.'); return; }
+      U.profile = { nick: nm, cls: cls, sch: sch };
+      var dest = pending || 'tree'; pending = null; go(dest);
+    }
+    else if (a === 'demoTree') { U.sit = 2; U.ans = [1, 1, 1, 1]; persist(); render(false); }
+    else if (a === 'see') {
+      if (!allAnswered()) { toast('Lengkapi semua pilihan dulu.'); return; }
+      U.res = outcome(U.ans); U.done = true; persist(); render(true);
+    }
+    else if (a === 'retry') { U.sit = -1; U.ans = [-1, -1, -1, -1]; U.done = false; U.res = null; persist(); render(true); }
+    else if (a === 'saveJ') {
+      if (!(U.j.a + U.j.b + U.j.c).trim()) { toast('Tulis dulu satu catatan.'); return; }
+      persist(); U.jSaved = true; render(false);
+      toast(U.jShare ? 'Jurnal tersimpan dan boleh dibaca Guru BK.' : 'Jurnal tersimpan. Hanya kamu yang bisa membacanya.');
+    }
+    else if (a === 'delJ') { U.j = { a: '', b: '', c: '' }; U.jSaved = false; U.jShare = false; persist(); render(false); toast('Jurnal dihapus.'); }
+    else if (a === 'send') {
+      if (U.topic < 0) { toast('Pilih topiknya dulu.'); return; }
+      if (!U.cAgree) { toast('Centang persetujuan dulu.'); return; }
+      U.sent = true; G.myStatus = 'Baru'; render(true); toast('Permintaan dibuat (simulasi).');
+    }
+    else if (a === 'newReq') { U.sent = false; U.topic = -1; U.note = ''; U.cAgree = false; render(true); }
+    else if (a === 'loginDemo') { $('#gem').value = GURU.email; $('#gpw').value = GURU.pw; }
+    else if (a === 'login') { doLogin(); }
+    else if (a === 'exit') {
+      if (G.in) { G.in = false; G.view = null; screen = 'beranda'; }
+      else { U = freshU(); try { localStorage.removeItem(KEY); } catch (er) {} screen = 'beranda'; }
+      render(true);
+    }
+    else if (a === 'gtab') { G.tab = el.getAttribute('data-t'); G.view = null; render(false); }
+    else if (a === 'readj') { G.view = el.getAttribute('data-id'); render(false); }
+    else if (a === 'closej') { G.view = null; render(false); }
+    else if (a === 'reqst') {
+      var rid = el.getAttribute('data-id'), rv = el.getAttribute('data-v');
+      if (rid === 'me') G.myStatus = rv; else G.reqs.forEach(function (r) { if (r.id === rid) r.status = rv; });
+      render(false);
+    }
+    else if (a === 'newcode') {
+      var nc;
+      do { nc = 'JEDA-' + (10 + Math.floor(Math.random() * 90)); } while (G.codes.some(function (c) { return c.code === nc; }));
+      G.codes.unshift({ code: nc, aktif: true, note: 'Dibuat hari ini' }); render(false); toast('Kode baru dibuat: ' + nc);
+    }
+    else if (a === 'togglecode') {
+      var cc = el.getAttribute('data-code');
+      G.codes.forEach(function (c) { if (c.code === cc) c.aktif = !c.aktif; }); render(false);
+    }
+    else if (a === 'reset') {
+      try { localStorage.removeItem(KEY); } catch (er) {}
+      U = freshU(); G = freshG(); screen = 'beranda'; pending = null; render(true); toast('Demo dimulai ulang.');
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    var t = e.target, id = t.id;
+    if (id === 'agree') { U.agree = t.checked; var b = $('#startBtn'); if (b) b.disabled = !U.agree; return; }
+    if (id === 'jshare') { U.jShare = t.checked; persist(); return; }
+    if (id === 'cagree') { U.cAgree = t.checked; return; }
+    if (id === 'fKelas') { G.fKelas = t.value; render(false); return; }
+    if (id === 'fHasil') { G.fHasil = t.value; render(false); return; }
+    var dt = t.getAttribute && t.getAttribute('data-t');
+    if (dt !== null && dt !== undefined && t.tagName === 'SELECT') {
+      var v = parseInt(t.value, 10);
+      if (dt === 's') U.sit = v; else if (dt === 'topic') U.topic = v; else U.ans[+dt] = v;
+      if (dt !== 'topic') { persist(); var s = $('#seeBtn'); if (s) s.disabled = !allAnswered(); }
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var k = e.target.getAttribute && e.target.getAttribute('data-j');
+    if (k) { U.j[k] = e.target.value; persist(); }
+    if (e.target.id === 'cnote') U.note = e.target.value;
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'gpw') { e.preventDefault(); doLogin(); }
+  });
+
+  render(false);
+})();
+</script>
+</body>
+</html>
