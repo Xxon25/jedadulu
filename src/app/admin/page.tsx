@@ -8,7 +8,9 @@ import {
   StaffAccount,
   loadPlatformState,
   getActiveStaffSession,
+  syncFromSupabaseCloud,
 } from "@/lib/store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import AdminDashboard from "@/components/AdminDashboard";
 
 export default function AdminRoutePage() {
@@ -35,12 +37,29 @@ export default function AdminRoutePage() {
   useEffect(() => {
     setMounted(true);
     refreshData();
+    syncFromSupabaseCloud();
+
     const handleSync = () => refreshData();
     window.addEventListener("jedadulu-sync", handleSync);
     window.addEventListener("storage", handleSync);
+
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null =
+      null;
+    if (isSupabaseConfigured && supabase) {
+      channel = supabase
+        .channel("jedadulu-realtime")
+        .on("broadcast", { event: "state_updated" }, () => {
+          syncFromSupabaseCloud();
+        })
+        .subscribe();
+    }
+
     return () => {
       window.removeEventListener("jedadulu-sync", handleSync);
       window.removeEventListener("storage", handleSync);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [refreshData]);
 

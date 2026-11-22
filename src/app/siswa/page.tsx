@@ -14,7 +14,9 @@ import {
   loadPlatformState,
   getActiveStudentId,
   setActiveStudentId,
+  syncFromSupabaseCloud,
 } from "@/lib/store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import StudentPortal from "@/components/StudentPortal";
 
 export default function SiswaRoutePage() {
@@ -47,12 +49,29 @@ export default function SiswaRoutePage() {
   useEffect(() => {
     setMounted(true);
     refreshData();
+    syncFromSupabaseCloud();
+
     const handleSync = () => refreshData();
     window.addEventListener("jedadulu-sync", handleSync);
     window.addEventListener("storage", handleSync);
+
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null =
+      null;
+    if (isSupabaseConfigured && supabase) {
+      channel = supabase
+        .channel("jedadulu-realtime")
+        .on("broadcast", { event: "state_updated" }, () => {
+          syncFromSupabaseCloud();
+        })
+        .subscribe();
+    }
+
     return () => {
       window.removeEventListener("jedadulu-sync", handleSync);
       window.removeEventListener("storage", handleSync);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [refreshData]);
 

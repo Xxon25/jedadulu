@@ -389,8 +389,50 @@ export function savePlatformState(state: PlatformState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     window.dispatchEvent(new CustomEvent("jedadulu-sync"));
+
+    // Sinkronisasi ke Supabase Cloud Storage & Realtime Broadcast
+    fetch("/api/cloud-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state }),
+    })
+      .then(() => {
+        if (isSupabaseConfigured && supabase) {
+          const channel = supabase.channel("jedadulu-realtime");
+          channel.subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+              channel.send({
+                type: "broadcast",
+                event: "state_updated",
+                payload: { updatedAt: Date.now() },
+              });
+            }
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("[Cloud Sync] Gagal sinkronisasi background:", err);
+      });
   } catch (error) {
     console.error("[Store] Gagal menyimpan state lokal:", error);
+  }
+}
+
+export async function syncFromSupabaseCloud(): Promise<PlatformState | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/cloud-sync", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.ok && data.state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.state));
+      window.dispatchEvent(new CustomEvent("jedadulu-sync"));
+      return data.state as PlatformState;
+    }
+    return null;
+  } catch (error) {
+    console.warn("[Cloud Sync] Gagal menarik state dari Supabase Cloud:", error);
+    return null;
   }
 }
 
