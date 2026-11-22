@@ -1,13 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   GitBranch,
   BookOpen,
   MessageCircle,
-  ShieldCheck,
   Sparkles,
   CheckCircle2,
   HeartHandshake,
@@ -16,11 +15,55 @@ import {
   Compass,
   Lock,
 } from "lucide-react";
+import {
+  DEFAULT_LANDING_CONFIG,
+  LandingPageConfig,
+  loadPlatformState,
+  syncFromSupabaseCloud,
+} from "@/lib/store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export default function LandingPage() {
+  const [cfg, setCfg] = useState<LandingPageConfig>(DEFAULT_LANDING_CONFIG);
+
+  const refreshConfig = useCallback(() => {
+    const state = loadPlatformState();
+    if (state.landingConfig) {
+      setCfg(state.landingConfig);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshConfig();
+    syncFromSupabaseCloud();
+
+    const handleSync = () => refreshConfig();
+    window.addEventListener("jedadulu-sync", handleSync);
+    window.addEventListener("storage", handleSync);
+
+    let channel: ReturnType<NonNullable<typeof supabase>["channel"]> | null =
+      null;
+    if (isSupabaseConfigured && supabase) {
+      channel = supabase
+        .channel("jedadulu-realtime")
+        .on("broadcast", { event: "state_updated" }, () => {
+          syncFromSupabaseCloud();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      window.removeEventListener("jedadulu-sync", handleSync);
+      window.removeEventListener("storage", handleSync);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [refreshConfig]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      {/* Navbar Utama — Bersih & Production Ready */}
+      {/* Navbar Utama */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
@@ -78,24 +121,24 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section (Dinamis dari Pengaturan Admin) */}
       <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-gradient-to-b from-white via-indigo-50/40 to-slate-50 border-b border-slate-200/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200/80 text-indigo-700 text-xs font-bold">
               <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              Media Layanan BK Interaktif untuk Siswa SMA/MA
+              {cfg.badgeText}
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
-              FOMO atau{" "}
+              {cfg.heroTitleMain}{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-600">
-                Emang Aku Mau?
+                {cfg.heroTitleHighlight}
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-              Sebelum terburu-buru mengikuti tren viral, membeli barang karena tekanan teman sebaya, atau terus-menerus membandingkan diri di media sosial—ambil jeda sejenak. Kenali motivasi di balik keinginanmu dan ambil keputusan secara sadar.
+              {cfg.heroDescription}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -103,14 +146,14 @@ export default function LandingPage() {
                 href="/siswa"
                 className="px-7 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/20 transition flex items-center gap-2.5"
               >
-                <span>Coba Decision Tree Sekarang</span>
+                <span>{cfg.ctaPrimaryText}</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href="/masuk"
                 className="px-6 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm sm:text-base border border-slate-300 shadow-sm transition"
               >
-                Masuk Ruang Layanan
+                {cfg.ctaSecondaryText}
               </Link>
             </div>
 
@@ -210,17 +253,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 3 Fitur Utama Layanan */}
-      <section id="fitur" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      {/* 3 Fitur Utama Layanan (Dinamis dari Pengaturan Admin) */}
+      <section
+        id="fitur"
+        className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12"
+      >
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
             Fitur Utama Layanan BK
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Dirancang untuk Menemani Siswa Berpikir Jernih
+            {cfg.featureSectionTitle}
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
-            Menghubungkan refleksi mandiri saat dorongan muncul dengan pendampingan konselor profesional di sekolah.
+            {cfg.featureSectionSubtitle}
           </p>
         </div>
 
@@ -230,10 +276,10 @@ export default function LandingPage() {
               <GitBranch className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">
-              1. Decision Tree &ldquo;FOMO atau Emang Aku Mau?&rdquo;
+              {cfg.feature1Title}
             </h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Alur 4 pertanyaan reflektif berjenjang yang menghasilkan tiga jenis rekomendasi non-diagnostik: <b>Lanjutkan secara Sadar (Hasil A)</b>, <b>Tunda atau Sesuaikan (Hasil B)</b>, atau <b>Ambil Jeda Refleksi (Hasil C)</b>.
+              {cfg.feature1Desc}
             </p>
           </div>
 
@@ -242,10 +288,10 @@ export default function LandingPage() {
               <BookOpen className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">
-              2. Jurnal &ldquo;My Life, Their Highlight&rdquo;
+              {cfg.feature2Title}
             </h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Sarana menulis refleksi perbandingan sosial untuk membedakan apa yang tampak di layar dengan kenyataan. Tersimpan aman di perangkatmu dan hanya dapat dibaca Guru BK jika kamu mengizinkannya.
+              {cfg.feature2Desc}
             </p>
           </div>
 
@@ -254,10 +300,10 @@ export default function LandingPage() {
               <MessageCircle className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">
-              3. Konsultasi & Live Chat Guru BK
+              {cfg.feature3Title}
             </h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Pintu masuk awal menuju layanan responsif. Siswa yang segan datang langsung dapat mengirim pengajuan jadwal konsultasi atau berdiskusi secara privat dengan Guru BK melalui Live Chat.
+              {cfg.feature3Desc}
             </p>
           </div>
         </div>
@@ -319,7 +365,10 @@ export default function LandingPage() {
       </section>
 
       {/* Landasan Teori BK & Etika */}
-      <section id="landasan" className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <section
+        id="landasan"
+        className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5 space-y-4">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-600">
@@ -364,7 +413,10 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div id="etika" className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2">
+            <div
+              id="etika"
+              className="bg-white p-5 rounded-2xl border border-slate-200 space-y-2"
+            >
               <Lock className="w-5 h-5 text-amber-600" />
               <h3 className="font-bold text-slate-900 text-sm">
                 Minimisasi Data & Batas Otomatisasi
@@ -377,7 +429,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer Resmi */}
+      {/* Footer Resmi (Dinamis dari Pengaturan Admin) */}
       <footer className="mt-auto bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-slate-800">
           <div className="md:col-span-6 space-y-3">
@@ -398,7 +450,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-              Website Layanan Bimbingan dan Konseling Interaktif Berbasis Decision Tree &ldquo;FOMO atau Emang Aku Mau?&rdquo; untuk Membantu Siswa SMA/MA Mengambil Keputusan Sadar di Media Sosial.
+              Website Layanan Bimbingan dan Konseling Interaktif Berbasis Decision Tree &ldquo;{cfg.heroTitleMain} {cfg.heroTitleHighlight}&rdquo; untuk Membantu Siswa SMA/MA Mengambil Keputusan Sadar di Media Sosial.
             </p>
           </div>
 
@@ -435,17 +487,16 @@ export default function LandingPage() {
               Informasi Akademik
             </h4>
             <p className="text-slate-400 leading-relaxed">
-              Pengembangan Teknologi Bimbingan dan Konseling<br />
-              Program Studi BK Pendidikan Islam<br />
-              Fakultas Tarbiyah dan Keguruan<br />
-              UIN Raden Intan Lampung (2026)
+              {cfg.universityName}
             </p>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>
-            Disusun oleh <b className="text-slate-300">Larasati Adi Ningrum</b> (NPM: 2411080031) · Dosen Pengampu: <b className="text-slate-300">Mega Aria Monica, M.Pd</b>
+            Disusun oleh <b className="text-slate-300">{cfg.authorName}</b> (NPM:{" "}
+            {cfg.authorNpm}) · Dosen Pengampu:{" "}
+            <b className="text-slate-300">{cfg.lecturerName}</b>
           </p>
           <p className="flex items-center gap-1.5">
             <HeartHandshake className="w-4 h-4 text-indigo-400" />

@@ -75,6 +75,27 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface LandingPageConfig {
+  badgeText: string;
+  heroTitleMain: string;
+  heroTitleHighlight: string;
+  heroDescription: string;
+  ctaPrimaryText: string;
+  ctaSecondaryText: string;
+  featureSectionTitle: string;
+  featureSectionSubtitle: string;
+  feature1Title: string;
+  feature1Desc: string;
+  feature2Title: string;
+  feature2Desc: string;
+  feature3Title: string;
+  feature3Desc: string;
+  authorName: string;
+  authorNpm: string;
+  lecturerName: string;
+  universityName: string;
+}
+
 export interface PlatformState {
   schoolCodes: SchoolCode[];
   staffUsers: StaffAccount[];
@@ -83,7 +104,35 @@ export interface PlatformState {
   chatMessages: ChatMessage[];
   customSituations: string[];
   customQuestions: DecisionQuestion[];
+  landingConfig: LandingPageConfig;
 }
+
+export const DEFAULT_LANDING_CONFIG: LandingPageConfig = {
+  badgeText: "Media Layanan BK Interaktif untuk Siswa SMA/MA",
+  heroTitleMain: "FOMO atau",
+  heroTitleHighlight: "Emang Aku Mau?",
+  heroDescription:
+    "Sebelum terburu-buru mengikuti tren viral, membeli barang karena tekanan teman sebaya, atau terus-menerus membandingkan diri di media sosial—ambil jeda sejenak. Kenali motivasi di balik keinginanmu dan ambil keputusan secara sadar.",
+  ctaPrimaryText: "Coba Decision Tree Sekarang",
+  ctaSecondaryText: "Masuk Ruang Layanan",
+  featureSectionTitle: "Dirancang untuk Menemani Siswa Berpikir Jernih",
+  featureSectionSubtitle:
+    "Menghubungkan refleksi mandiri saat dorongan muncul dengan pendampingan konselor profesional di sekolah.",
+  feature1Title: '1. Decision Tree "FOMO atau Emang Aku Mau?"',
+  feature1Desc:
+    "Alur 4 pertanyaan reflektif berjenjang yang menghasilkan tiga jenis rekomendasi non-diagnostik: Lanjutkan secara Sadar (Hasil A), Tunda atau Sesuaikan (Hasil B), atau Ambil Jeda Refleksi (Hasil C).",
+  feature2Title: '2. Jurnal "My Life, Their Highlight"',
+  feature2Desc:
+    "Sarana menulis refleksi perbandingan sosial untuk membedakan apa yang tampak di layar dengan kenyataan. Tersimpan aman dan dapat dibagikan kepada Guru BK.",
+  feature3Title: "3. Konsultasi & Live Chat Guru BK",
+  feature3Desc:
+    "Pintu masuk awal menuju layanan responsif. Siswa yang segan datang langsung dapat mengirim pengajuan jadwal konsultasi atau berdiskusi secara privat dengan Guru BK melalui Live Chat.",
+  authorName: "Larasati Adi Ningrum",
+  authorNpm: "2411080031",
+  lecturerName: "Mega Aria Monica, M.Pd",
+  universityName:
+    "Program Studi BK Pendidikan Islam · Fakultas Tarbiyah dan Keguruan · UIN Raden Intan Lampung (2026)",
+};
 
 const STORAGE_KEY = "jedadulu_platform_v1";
 const ACTIVE_STUDENT_KEY = "jedadulu_active_student_id";
@@ -358,6 +407,7 @@ const INITIAL_STATE: PlatformState = {
   ],
   customSituations: DEFAULT_SITUATIONS,
   customQuestions: DEFAULT_QUESTIONS,
+  landingConfig: DEFAULT_LANDING_CONFIG,
 };
 
 export function loadPlatformState(): PlatformState {
@@ -377,6 +427,10 @@ export function loadPlatformState(): PlatformState {
       chatMessages: parsed.chatMessages || INITIAL_STATE.chatMessages,
       customSituations: parsed.customSituations || INITIAL_STATE.customSituations,
       customQuestions: parsed.customQuestions || INITIAL_STATE.customQuestions,
+      landingConfig: {
+        ...DEFAULT_LANDING_CONFIG,
+        ...(parsed.landingConfig || {}),
+      },
     };
   } catch (error) {
     console.error("[Store] Gagal memuat state lokal:", error);

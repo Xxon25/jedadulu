@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ShieldAlert,
   BarChart3,
@@ -10,19 +11,36 @@ import {
   Trash2,
   LogOut,
   CheckCircle2,
-  ShieldCheck,
   RotateCcw,
   Users,
+  LayoutTemplate,
+  GraduationCap,
+  HeartHandshake,
+  Save,
+  Eye,
+  ExternalLink,
+  MessageSquare,
 } from "lucide-react";
 import {
   PlatformState,
   StaffAccount,
+  StudentRecord,
+  LandingPageConfig,
+  DEFAULT_LANDING_CONFIG,
   authenticateStaff,
   setActiveStaffSession,
   savePlatformState,
   resetDemoState,
+  getActiveStudentId,
+  setActiveStudentId,
 } from "@/lib/store";
-import { DEFAULT_QUESTIONS, DEFAULT_SITUATIONS } from "@/lib/bk-data";
+import {
+  DEFAULT_QUESTIONS,
+  DEFAULT_SITUATIONS,
+  DECISION_OUTCOMES,
+} from "@/lib/bk-data";
+import StudentPortal from "@/components/StudentPortal";
+import CounselorDashboard from "@/components/CounselorDashboard";
 
 interface AdminDashboardProps {
   state: PlatformState;
@@ -31,7 +49,14 @@ interface AdminDashboardProps {
   showToast: (msg: string) => void;
 }
 
-type AdminTab = "analitik" | "guru" | "siswa" | "konten";
+type AdminTab =
+  | "analitik"
+  | "landing"
+  | "view_guru"
+  | "view_siswa"
+  | "guru"
+  | "siswa"
+  | "konten";
 
 export default function AdminDashboard({
   state,
@@ -46,6 +71,11 @@ export default function AdminDashboard({
   const [password, setPassword] = useState("");
   const [loginErr, setLoginErr] = useState("");
 
+  // Form Edit Tampilan Depan (Landing Page CMS)
+  const [landingForm, setLandingForm] = useState<LandingPageConfig>(
+    state.landingConfig || DEFAULT_LANDING_CONFIG
+  );
+
   // Form Tambah Guru BK
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -55,6 +85,21 @@ export default function AdminDashboard({
 
   // Form Tambah Situasi Baru
   const [newSituation, setNewSituation] = useState("");
+
+  // Inspect Detail Siswa (Full Access Admin: Jurnal + Chat + Hasil)
+  const [inspectedStudent, setInspectedStudent] =
+    useState<StudentRecord | null>(null);
+
+  // Pilih Siswa saat Admin membuka "Dashboard Siswa"
+  const [previewStudentId, setPreviewStudentId] = useState<string>(
+    getActiveStudentId() || state.students[0]?.id || ""
+  );
+
+  useEffect(() => {
+    if (state.landingConfig) {
+      setLandingForm(state.landingConfig);
+    }
+  }, [state.landingConfig]);
 
   const isAdminLoggedIn = activeStaff && activeStaff.role === "admin";
 
@@ -71,13 +116,31 @@ export default function AdminDashboard({
       return;
     }
     onRefresh();
-    showToast(`Selamat datang, ${res.staff.fullName}`);
+    showToast(`Selamat datang di Panel Super Admin, ${res.staff.fullName}`);
   };
 
   const handleLogout = () => {
     setActiveStaffSession(null);
     onRefresh();
     showToast("Telah keluar dari Administrasi Sistem.");
+  };
+
+  const handleSaveLandingConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    state.landingConfig = { ...landingForm };
+    savePlatformState(state);
+    onRefresh();
+    showToast(
+      "Tampilan Halaman Depan (Landing Page) berhasil diperbarui & disimpan ke Cloud!"
+    );
+  };
+
+  const handleResetLandingConfig = () => {
+    setLandingForm(DEFAULT_LANDING_CONFIG);
+    state.landingConfig = { ...DEFAULT_LANDING_CONFIG };
+    savePlatformState(state);
+    onRefresh();
+    showToast("Tampilan Depan dikembalikan ke teks default proposal.");
   };
 
   const handleAddCounselor = (e: React.FormEvent) => {
@@ -135,6 +198,7 @@ export default function AdminDashboard({
     state.chatMessages = state.chatMessages.filter(
       (m) => m.studentId !== studentId
     );
+    if (inspectedStudent?.id === studentId) setInspectedStudent(null);
     savePlatformState(state);
     onRefresh();
     showToast(`Data siswa ${nick} telah dihapus dari sistem.`);
@@ -148,6 +212,25 @@ export default function AdminDashboard({
     setNewSituation("");
     onRefresh();
     showToast("Skenario situasi baru ditambahkan ke Decision Tree.");
+  };
+
+  const handleUpdateQuestionText = (
+    qIndex: number,
+    newQuestionText: string
+  ) => {
+    state.customQuestions[qIndex].question = newQuestionText;
+    savePlatformState(state);
+    onRefresh();
+  };
+
+  const handleUpdateQuestionOption = (
+    qIndex: number,
+    optIndex: number,
+    newOptText: string
+  ) => {
+    state.customQuestions[qIndex].options[optIndex] = newOptText;
+    savePlatformState(state);
+    onRefresh();
   };
 
   const handleResetDefaultContent = () => {
@@ -164,13 +247,13 @@ export default function AdminDashboard({
         <div className="space-y-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold">
             <ShieldAlert className="w-3.5 h-3.5" />
-            Administrasi Tata Kelola Sistem
+            Super Admin · Full Access Control
           </span>
           <h2 className="text-2xl font-extrabold text-slate-900">
-            Masuk Pengelola Sistem
+            Masuk Dashboard Admin
           </h2>
           <p className="text-sm text-slate-500">
-            Khusus pengelola untuk mengatur akun Guru BK, kode sekolah, dan struktur pertanyaan Decision Tree.
+            Akses penuh untuk mengedit tampilan halaman depan, melihat & mengoperasikan Dashboard Guru BK, Dashboard Siswa, serta seluruh basis data.
           </p>
         </div>
 
@@ -183,14 +266,14 @@ export default function AdminDashboard({
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-              Email Pengelola
+              Email Administrator
             </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@sekolah.sch.id"
+              placeholder="admin@sekolah-contoh.sch.id"
               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-indigo-600"
             />
           </div>
@@ -212,7 +295,7 @@ export default function AdminDashboard({
             type="submit"
             className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-sm"
           >
-            Masuk Administrasi Sistem
+            Masuk Super Admin
           </button>
         </form>
       </div>
@@ -230,21 +313,35 @@ export default function AdminDashboard({
     (s) => s.classLevel === "XII"
   ).length;
 
+  const activePreviewStudent =
+    state.students.find((s) => s.id === previewStudentId) ||
+    state.students[0] ||
+    null;
+
   return (
     <div className="space-y-6">
+      {/* Header Super Admin dengan Pintasan Cepat ke Semua Portal */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-            Tata Kelola & Etika Data Layanan BK
+            Super Administrator · Full Access Control
           </span>
           <h1 className="text-2xl font-extrabold text-slate-900 mt-0.5">
             {activeStaff.fullName}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            ID: {activeStaff.nip} · Pengelolaan Konselor, Direktori Privasi, & Konten Decision Tree
+            ID: {activeStaff.nip} · Akses Penuh: Edit Tampilan Depan, Lihat Dashboard Guru BK, Lihat Dashboard Siswa, & Kelola Semua Data
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/"
+            target="_blank"
+            className="px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center gap-1.5"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Lihat Web Depan
+          </Link>
           <button
             onClick={() => {
               resetDemoState();
@@ -254,7 +351,7 @@ export default function AdminDashboard({
             className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Atur Ulang Data
+            Reset Data
           </button>
           <button
             onClick={handleLogout}
@@ -266,12 +363,33 @@ export default function AdminDashboard({
         </div>
       </div>
 
+      {/* Navigasi Super Admin Lengkap */}
       <div className="flex flex-wrap gap-2">
         {[
           {
             id: "analitik",
-            label: "Statistik Agregat & Etika",
+            label: "Ringkasan & Statistik",
             icon: <BarChart3 className="w-4 h-4" />,
+          },
+          {
+            id: "landing",
+            label: "Edit Tampilan Depan",
+            icon: <LayoutTemplate className="w-4 h-4" />,
+          },
+          {
+            id: "view_guru",
+            label: "Buka Dashboard Guru BK",
+            icon: <HeartHandshake className="w-4 h-4" />,
+          },
+          {
+            id: "view_siswa",
+            label: "Buka Dashboard Siswa",
+            icon: <GraduationCap className="w-4 h-4" />,
+          },
+          {
+            id: "siswa",
+            label: `Data Lengkap Siswa (${state.students.length})`,
+            icon: <Users className="w-4 h-4" />,
           },
           {
             id: "guru",
@@ -279,13 +397,8 @@ export default function AdminDashboard({
             icon: <UserCog className="w-4 h-4" />,
           },
           {
-            id: "siswa",
-            label: `Direktori & Privasi Siswa (${state.students.length})`,
-            icon: <Users className="w-4 h-4" />,
-          },
-          {
             id: "konten",
-            label: "Konten Decision Tree",
+            label: "Edit Pertanyaan Decision Tree",
             icon: <FileEdit className="w-4 h-4" />,
           },
         ].map((item) => {
@@ -294,9 +407,9 @@ export default function AdminDashboard({
             <button
               key={item.id}
               onClick={() => setTab(item.id as AdminTab)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 ${
+              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
                 active
-                  ? "bg-slate-900 text-white shadow-sm"
+                  ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
               }`}
             >
@@ -307,8 +420,72 @@ export default function AdminDashboard({
         })}
       </div>
 
+      {/* TAB 1: ANALITIK & PINTASAN CEPAT */}
       {tab === "analitik" && (
         <div className="space-y-6">
+          {/* 3 Kartu Pintasan Cepat Super Admin */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => setTab("landing")}
+              className="text-left p-5 rounded-3xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-md hover:opacity-95 transition space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2.5 rounded-2xl bg-white/15">
+                  <LayoutTemplate className="w-5 h-5" />
+                </span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20">
+                  CMS Editor
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold">
+                Edit Tampilan Halaman Depan
+              </h3>
+              <p className="text-xs text-indigo-100 leading-relaxed">
+                Ubah judul Hero, deskripsi, tombol CTA, kartu 3 fitur utama, hingga nama penyusun di footer secara langsung.
+              </p>
+            </button>
+
+            <button
+              onClick={() => setTab("view_guru")}
+              className="text-left p-5 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md hover:opacity-95 transition space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2.5 rounded-2xl bg-white/15">
+                  <HeartHandshake className="w-5 h-5" />
+                </span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20">
+                  Full Akses
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold">
+                Lihat & Operasikan Dashboard Guru BK
+              </h3>
+              <p className="text-xs text-emerald-100 leading-relaxed">
+                Pantau hasil refleksi siswa, jadwal konsultasi, dan balas Live Chat siswa langsung dari ruang Admin.
+              </p>
+            </button>
+
+            <button
+              onClick={() => setTab("view_siswa")}
+              className="text-left p-5 rounded-3xl bg-gradient-to-br from-sky-600 to-blue-700 text-white shadow-md hover:opacity-95 transition space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-2.5 rounded-2xl bg-white/15">
+                  <GraduationCap className="w-5 h-5" />
+                </span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20">
+                  Mode Preview Siswa
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold">
+                Lihat & Uji Dashboard Murid / Siswa
+              </h3>
+              <p className="text-xs text-sky-100 leading-relaxed">
+                Pilih akun siswa mana saja untuk melihat tampilan Decision Tree, Jurnal, Konsultasi, & Live Chat dari sudut pandang murid.
+              </p>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-1">
               <span className="text-xs font-bold text-emerald-700">
@@ -345,70 +522,637 @@ export default function AdminDashboard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
-              <h3 className="text-base font-extrabold text-slate-900">
-                Sebaran Siswa per Jenjang Kelas
-              </h3>
-              <div className="space-y-3">
-                {[
-                  { label: "Kelas X", val: countClassX, color: "bg-indigo-600" },
-                  {
-                    label: "Kelas XI",
-                    val: countClassXI,
-                    color: "bg-sky-500",
-                  },
-                  {
-                    label: "Kelas XII",
-                    val: countClassXII,
-                    color: "bg-emerald-500",
-                  },
-                ].map((row, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between text-xs font-bold text-slate-700">
-                      <span>{row.label}</span>
-                      <span>{row.val} Siswa</span>
-                    </div>
-                    <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className={`h-full ${row.color}`}
-                        style={{
-                          width: `${
-                            state.students.length
-                              ? Math.round(
-                                  (row.val / state.students.length) * 100
-                                )
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900">
+              Sebaran Siswa per Jenjang Kelas
+            </h3>
+            <div className="space-y-3">
+              {[
+                { label: "Kelas X", val: countClassX, color: "bg-indigo-600" },
+                { label: "Kelas XI", val: countClassXI, color: "bg-sky-500" },
+                {
+                  label: "Kelas XII",
+                  val: countClassXII,
+                  color: "bg-emerald-500",
+                },
+              ].map((row, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-700">
+                    <span>{row.label}</span>
+                    <span>{row.val} Siswa</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-3">
-              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-sm">
-                <ShieldCheck className="w-5 h-5" />
-                Kepatuhan Etika & Perlindungan Data BK
-              </div>
-              <ul className="text-xs text-slate-600 space-y-2 leading-relaxed">
-                <li>
-                  • <b>Pemisahan Wewenang:</b> Pengelola sistem hanya memantau data agregat dan akun konselor, serta <b>tidak dapat mengakses isi jurnal maupun percakapan konseling siswa</b>.
-                </li>
-                <li>
-                  • <b>Minimisasi Data:</b> Sistem tidak memungut data sensitif di luar kebutuhan refleksi awal.
-                </li>
-                <li>
-                  • <b>Mekanisme Penghapusan:</b> Tersedia fitur penghapusan data siswa sesuai standar perlindungan data.
-                </li>
-              </ul>
+                  <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full ${row.color}`}
+                      style={{
+                        width: `${
+                          state.students.length
+                            ? Math.round(
+                                (row.val / state.students.length) * 100
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
+      {/* TAB 2: EDIT TAMPILAN DEPAN (LANDING PAGE CMS) */}
+      {tab === "landing" && (
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                Content Management System (CMS) · Halaman Utama
+              </span>
+              <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
+                Edit Tampilan Halaman Depan (Landing Page)
+              </h2>
+              <p className="text-sm text-slate-500">
+                Semua perubahan di bawah ini akan langsung tampil di halaman depan (`/`) dan tersimpan ke Supabase Cloud.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleResetLandingConfig}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
+              >
+                Reset ke Default
+              </button>
+              <Link
+                href="/"
+                target="_blank"
+                className="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-xs font-bold text-indigo-700 border border-indigo-200 flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Pratinjau Halaman Depan
+              </Link>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveLandingConfig} className="space-y-6">
+            {/* Bagian 1: Hero Banner */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                1. Bagian Hero Utama (Atas)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Label Badge Atas
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.badgeText}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        badgeText: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Judul Utama (Hitam)
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.heroTitleMain}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        heroTitleMain: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Judul Highlight (Biru/Indigo)
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.heroTitleHighlight}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        heroTitleHighlight: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Deskripsi Paragraf Hero
+                </label>
+                <textarea
+                  rows={3}
+                  value={landingForm.heroDescription}
+                  onChange={(e) =>
+                    setLandingForm({
+                      ...landingForm,
+                      heroDescription: e.target.value,
+                    })
+                  }
+                  className="w-full p-3.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Teks Tombol Utama (CTA 1)
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.ctaPrimaryText}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        ctaPrimaryText: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Teks Tombol Kedua (CTA 2)
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.ctaSecondaryText}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        ctaSecondaryText: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bagian 2: Kartu 3 Fitur Utama */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                2. Bagian Fitur Layanan BK (3 Kartu)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Judul Seksi Fitur
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.featureSectionTitle}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        featureSectionTitle: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Subjudul Seksi Fitur
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.featureSectionSubtitle}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        featureSectionSubtitle: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-indigo-700">
+                    Kartu Fitur 1
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.feature1Title}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature1Title: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                  />
+                  <textarea
+                    rows={3}
+                    value={landingForm.feature1Desc}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature1Desc: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-sky-700">
+                    Kartu Fitur 2
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.feature2Title}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature2Title: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                  />
+                  <textarea
+                    rows={3}
+                    value={landingForm.feature2Desc}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature2Desc: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-emerald-700">
+                    Kartu Fitur 3
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.feature3Title}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature3Title: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-900"
+                  />
+                  <textarea
+                    rows={3}
+                    value={landingForm.feature3Desc}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        feature3Desc: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bagian 3: Identitas Footer & Akademik */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                3. Bagian Footer & Identitas Akademik
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nama Penyusun
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.authorName}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        authorName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    NPM Penyusun
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.authorNpm}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        authorNpm: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Dosen Pengampu
+                  </label>
+                  <input
+                    type="text"
+                    value={landingForm.lecturerName}
+                    onChange={(e) =>
+                      setLandingForm({
+                        ...landingForm,
+                        lecturerName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Program Studi / Fakultas / Universitas
+                </label>
+                <input
+                  type="text"
+                  value={landingForm.universityName}
+                  onChange={(e) =>
+                    setLandingForm({
+                      ...landingForm,
+                      universityName: e.target.value,
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              Simpan Perubahan Tampilan Depan
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 3: LIHAT & OPERASIKAN DASHBOARD GURU BK LANGSUNG DI DALAM ADMIN */}
+      {tab === "view_guru" && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-900">
+              <HeartHandshake className="w-4 h-4 text-emerald-600" />
+              <span>
+                Mode Super Admin: Anda sedang melihat & mengoperasikan penuh{" "}
+                <b>Dashboard Guru BK</b>
+              </span>
+            </div>
+            <Link
+              href="/guru-bk"
+              className="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1"
+            >
+              Buka di Halaman Penuh (/guru-bk)
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <CounselorDashboard
+            state={state}
+            activeStaff={activeStaff}
+            onRefresh={onRefresh}
+            showToast={showToast}
+          />
+        </div>
+      )}
+
+      {/* TAB 4: LIHAT & OPERASIKAN DASHBOARD SISWA LANGSUNG DI DALAM ADMIN */}
+      {tab === "view_siswa" && (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-sky-950 flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-sky-600" />
+                Lihat Dashboard Siswa Sebagai:
+              </span>
+              <select
+                value={activePreviewStudent?.id || ""}
+                onChange={(e) => {
+                  setPreviewStudentId(e.target.value);
+                  setActiveStudentId(e.target.value);
+                  onRefresh();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white border border-sky-300 text-xs font-bold text-slate-900"
+              >
+                {state.students.map((stu) => (
+                  <option key={stu.id} value={stu.id}>
+                    {stu.nickname} (Kelas {stu.classLevel}) —{" "}
+                    {stu.resultCode ? `Hasil ${stu.resultCode}` : "Belum isi tree"}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Link
+              href="/siswa"
+              className="text-xs font-bold text-sky-700 hover:underline flex items-center gap-1"
+            >
+              Buka di Halaman Penuh (/siswa)
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <StudentPortal
+            state={state}
+            activeStudent={activePreviewStudent}
+            onRefresh={onRefresh}
+            showToast={showToast}
+          />
+        </div>
+      )}
+
+      {/* TAB 5: DIREKTORI LENGKAP SISWA (FULL ACCESS ADMIN: BACA SEMUA JURNAL & CHAT) */}
+      {tab === "siswa" && (
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-5">
+          <div>
+            <h3 className="text-lg font-extrabold text-slate-900">
+              Data Lengkap Seluruh Siswa (Full Access Super Admin)
+            </h3>
+            <p className="text-xs text-slate-500">
+              Sebagai Super Admin, Anda dapat melihat detail penuh setiap siswa (Hasil Decision Tree, Isi Jurnal, & Riwayat Chat), masuk sebagai siswa tersebut, atau menghapus datanya.
+            </p>
+          </div>
+
+          {inspectedStudent && (
+            <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                    Inspeksi Detail Siswa · Full Access Admin
+                  </span>
+                  <h4 className="text-lg font-extrabold text-slate-900">
+                    {inspectedStudent.nickname} · Kelas{" "}
+                    {inspectedStudent.classLevel}
+                  </h4>
+                </div>
+                <button
+                  onClick={() => setInspectedStudent(null)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700"
+                >
+                  Tutup Detail
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
+                  <strong className="text-indigo-700 block">
+                    Hasil Decision Tree:
+                  </strong>
+                  <p className="text-slate-800 font-semibold">
+                    {inspectedStudent.resultCode
+                      ? `Hasil ${inspectedStudent.resultCode} — ${
+                          DECISION_OUTCOMES[inspectedStudent.resultCode].title
+                        }`
+                      : "Belum menyelesaikan Decision Tree"}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
+                  <strong className="text-sky-700 block">
+                    Isi Jurnal Refleksi Siswa:
+                  </strong>
+                  {inspectedStudent.journal.saved ? (
+                    <div className="space-y-1 text-slate-700">
+                      <p>
+                        <b>Dilihat:</b> {inspectedStudent.journal.seen || "-"}
+                      </p>
+                      <p>
+                        <b>Dirasakan:</b> {inspectedStudent.journal.felt || "-"}
+                      </p>
+                      <p>
+                        <b>Tak tampak:</b>{" "}
+                        {inspectedStudent.journal.unseen || "-"}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 italic">Belum menulis jurnal</p>
+                  )}
+                </div>
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-1">
+                  <strong className="text-emerald-700 block">
+                    Riwayat Live Chat ({
+                      state.chatMessages.filter(
+                        (m) => m.studentId === inspectedStudent.id
+                      ).length
+                    }{" "}
+                    pesan):
+                  </strong>
+                  <div className="max-h-28 overflow-y-auto space-y-1 text-slate-700">
+                    {state.chatMessages
+                      .filter((m) => m.studentId === inspectedStudent.id)
+                      .map((m) => (
+                        <p key={m.id}>
+                          <b>{m.senderName}:</b> {m.message}
+                        </p>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200">
+                  <th className="py-3.5 px-4">Nama Siswa</th>
+                  <th className="py-3.5 px-4">Kelas</th>
+                  <th className="py-3.5 px-4">Hasil Tree</th>
+                  <th className="py-3.5 px-4">Status Jurnal</th>
+                  <th className="py-3.5 px-4">Kontrol Penuh Admin</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {state.students.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50/80">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                      {s.nickname}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      Kelas {s.classLevel}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs font-bold">
+                      {s.resultCode ? (
+                        <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                          Hasil {s.resultCode}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">Belum Mengisi</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-slate-600">
+                      {s.journal.saved
+                        ? s.journal.sharedWithCounselor
+                          ? "Tersimpan (Dibagikan)"
+                          : "Tersimpan (Privat)"
+                        : "Kosong"}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => setInspectedStudent(s)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Detail & Jurnal
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPreviewStudentId(s.id);
+                            setActiveStudentId(s.id);
+                            setTab("view_siswa");
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold border border-sky-200 transition"
+                        >
+                          <GraduationCap className="w-3.5 h-3.5" />
+                          Buka sbg Siswa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStudent(s.id, s.nickname)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: KELOLA AKUN GURU BK */}
       {tab === "guru" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
@@ -509,7 +1253,7 @@ export default function AdminDashboard({
                             : "bg-indigo-100 text-indigo-800"
                         }`}
                       >
-                        {st.role === "admin" ? "Pengelola" : "Guru BK"}
+                        {st.role === "admin" ? "Super Admin" : "Guru BK"}
                       </span>
                       <span
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
@@ -522,7 +1266,9 @@ export default function AdminDashboard({
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      {st.email} · NIP/ID: {st.nip} · {st.schoolName}
+                      Email: <b>{st.email}</b> · Sandi:{" "}
+                      <b>{st.password || "(Supabase Auth)"}</b> · NIP/ID:{" "}
+                      {st.nip}
                     </p>
                   </div>
                   {st.role !== "admin" && (
@@ -540,60 +1286,7 @@ export default function AdminDashboard({
         </div>
       )}
 
-      {tab === "siswa" && (
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-base font-extrabold text-slate-900">
-              Manajemen Data Siswa (Hak Koreksi & Penghapusan Data)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Pengelola dapat menghapus rekaman siswa atas permintaan siswa/wali atau setelah masa layanan berakhir. Isi jurnal dan percakapan konseling tetap terlindungi dari pengelola.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200">
-                  <th className="py-3 px-4">Nama Siswa</th>
-                  <th className="py-3 px-4">Kelas</th>
-                  <th className="py-3 px-4">Kode Sekolah</th>
-                  <th className="py-3 px-4">Status Refleksi</th>
-                  <th className="py-3 px-4">Tindakan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {state.students.map((s) => (
-                  <tr key={s.id}>
-                    <td className="py-3 px-4 font-bold text-slate-900">
-                      {s.nickname}
-                    </td>
-                    <td className="py-3 px-4 text-slate-600">
-                      Kelas {s.classLevel}
-                    </td>
-                    <td className="py-3 px-4 text-indigo-600 font-mono text-xs font-bold">
-                      {s.schoolCode}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-600">
-                      {s.resultCode ? "Sudah Mengisi" : "Belum Mengisi"}
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => handleDeleteStudent(s.id, s.nickname)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Hapus Data
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
+      {/* TAB 7: EDIT PERTANYAAN & SITUASI DECISION TREE */}
       {tab === "konten" && (
         <div className="space-y-6">
           <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
@@ -603,14 +1296,14 @@ export default function AdminDashboard({
                   Daftar Skenario Situasi Decision Tree
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Kelola pilihan situasi awal yang relevan dengan keseharian media sosial siswa.
+                  Kelola pilihan situasi awal yang dapat dipilih oleh siswa.
                 </p>
               </div>
               <button
                 onClick={handleResetDefaultContent}
                 className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
               >
-                Kembalikan ke Standar
+                Kembalikan ke Standar Proposal
               </button>
             </div>
 
@@ -618,12 +1311,24 @@ export default function AdminDashboard({
               {state.customSituations.map((sit, i) => (
                 <div
                   key={i}
-                  className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-800 font-medium"
+                  className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 text-xs text-slate-800 font-medium"
                 >
                   <span>
                     <b>#{i + 1}.</b> {sit}
                   </span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (state.customSituations.length <= 1) return;
+                      state.customSituations.splice(i, 1);
+                      savePlatformState(state);
+                      onRefresh();
+                      showToast("Situasi dihapus.");
+                    }}
+                    className="text-rose-600 hover:text-rose-800 p-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -646,30 +1351,58 @@ export default function AdminDashboard({
           </div>
 
           <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-4">
-            <h3 className="text-base font-extrabold text-slate-900">
-              Struktur 4 Pertanyaan Inti Decision Tree (P1–P4)
-            </h3>
-            <div className="space-y-3">
-              {state.customQuestions.map((q) => (
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                Edit Redaksi 4 Pertanyaan & Pilihan Jawaban Decision Tree (P1–P4)
+              </h3>
+              <p className="text-xs text-slate-500">
+                Anda dapat mengedit teks pertanyaan maupun ketiga opsi jawaban secara langsung.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {state.customQuestions.map((q, qIdx) => (
                 <div
                   key={q.id}
-                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
+                  className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-indigo-700">
-                      {q.code} · {q.theoryBasis}
+                      Pertanyaan {q.code} · {q.theoryBasis}
                     </span>
-                    <span className="text-emerald-700 font-bold">
-                      Terverifikasi BK
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Tersimpan Otomatis
                     </span>
                   </div>
-                  <p className="text-sm font-extrabold text-slate-900">
-                    {q.question}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    Opsi: 1) {q.options[0]} · 2) {q.options[1]} · 3){" "}
-                    {q.options[2]}
-                  </p>
+                  <input
+                    type="text"
+                    value={q.question}
+                    onChange={(e) =>
+                      handleUpdateQuestionText(qIdx, e.target.value)
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-900"
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    {q.options.map((opt, optIdx) => (
+                      <div key={optIdx}>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-1">
+                          Opsi {optIdx + 1}
+                        </label>
+                        <input
+                          type="text"
+                          value={opt}
+                          onChange={(e) =>
+                            handleUpdateQuestionOption(
+                              qIdx,
+                              optIdx,
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
