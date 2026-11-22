@@ -52,10 +52,9 @@ export default function StudentPortal({
 }: StudentPortalProps) {
   const [tab, setTab] = useState<StudentTab>("beranda");
 
-  // Form Identitas & Persetujuan
+  // Form Identitas & Persetujuan (Tanpa kode sekolah)
   const [nick, setNick] = useState("");
   const [cls, setCls] = useState<"X" | "XI" | "XII" | "">("");
-  const [code, setCode] = useState("");
   const [agree, setAgree] = useState(false);
 
   // Form Decision Tree
@@ -129,7 +128,7 @@ export default function StudentPortal({
       showToast("Pilih jenjang kelas X, XI, atau XII terlebih dahulu.");
       return;
     }
-    const res = await registerOrLoginStudent(nick, cls, code, agree);
+    const res = await registerOrLoginStudent(nick, cls, "JEDA-01", agree);
     if (!res.ok) {
       showToast(res.error || "Gagal masuk.");
       return;
@@ -456,12 +455,12 @@ export default function StudentPortal({
                     Mulai Sesi Refleksimu
                   </h2>
                   <p className="text-sm text-slate-500 mt-0.5">
-                    Masukkan nama panggilan, kelas, dan kode sekolah yang diberikan oleh Guru BK-mu.
+                    Cukup isi nama panggilan dan pilih kelasmu untuk memulai ruang refleksi.
                   </p>
                 </div>
 
                 <form onSubmit={handleStudentLogin} className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                         Nama Panggilan / Lengkap
@@ -493,20 +492,6 @@ export default function StudentPortal({
                         <option value="XI">Kelas XI</option>
                         <option value="XII">Kelas XII</option>
                       </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                        Kode Sekolah
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="Kode dari Guru BK"
-                        maxLength={15}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm uppercase font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-                      />
                     </div>
                   </div>
 

@@ -483,30 +483,20 @@ export async function registerOrLoginStudent(
 ): Promise<{ ok: boolean; error?: string; student?: StudentRecord }> {
   // Fail-Fast validation
   const cleanNick = nickname.trim();
-  const cleanCode = schoolCode.trim().toUpperCase();
+  const cleanCode = (schoolCode || "JEDA-01").trim().toUpperCase();
   if (!cleanNick) return { ok: false, error: "Nama panggilan wajib diisi." };
   if (!["X", "XI", "XII"].includes(classLevel)) {
     return { ok: false, error: "Pilih kelas X, XI, atau XII terlebih dahulu." };
   }
-  if (!cleanCode) return { ok: false, error: "Kode sekolah wajib diisi." };
   if (!consentAgreed) {
     return { ok: false, error: "Kamu wajib menyetujui ketentuan privasi sebelum memulai." };
   }
 
   const state = loadPlatformState();
-  const validCode = state.schoolCodes.find((c) => c.code === cleanCode && c.isActive);
-  if (!validCode) {
-    return {
-      ok: false,
-      error: `Kode sekolah "${cleanCode}" tidak ditemukan atau sudah dinonaktifkan. Hubungi Guru BK (contoh: JEDA-01).`,
-    };
-  }
-
   let existing = state.students.find(
     (s) =>
       s.nickname.toLowerCase() === cleanNick.toLowerCase() &&
-      s.classLevel === classLevel &&
-      s.schoolCode === cleanCode
+      s.classLevel === classLevel
   );
 
   if (!existing) {

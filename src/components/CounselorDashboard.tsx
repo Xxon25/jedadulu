@@ -335,11 +335,6 @@ export default function CounselorDashboard({
             label: `Live Chat Konseling (${state.chatMessages.length})`,
             icon: <MessageSquare className="w-4 h-4" />,
           },
-          {
-            id: "kode",
-            label: "Kode Akses Sekolah",
-            icon: <KeyRound className="w-4 h-4" />,
-          },
         ].map((item) => {
           const active = tab === item.id;
           return (

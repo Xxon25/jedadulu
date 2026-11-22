@@ -25,10 +25,9 @@ export default function MasukPage() {
   const router = useRouter();
   const [loginType, setLoginType] = useState<LoginType>("siswa");
 
-  // Form Siswa
+  // Form Siswa (Tanpa kode sekolah, cukup Nama + Kelas + Persetujuan)
   const [nick, setNick] = useState("");
   const [cls, setCls] = useState<"X" | "XI" | "XII" | "">("");
-  const [code, setCode] = useState("");
   const [agree, setAgree] = useState(false);
 
   // Form Staf (Guru BK / Admin — terdeteksi otomatis berdasarkan role akun)
@@ -47,7 +46,7 @@ export default function MasukPage() {
       return;
     }
     setLoading(true);
-    const res = await registerOrLoginStudent(nick, cls, code, agree);
+    const res = await registerOrLoginStudent(nick, cls, "JEDA-01", agree);
     setLoading(false);
     if (!res.ok) {
       setErrMsg(res.error || "Gagal masuk ke ruang siswa.");
@@ -211,40 +210,23 @@ export default function MasukPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Kelas
-                  </label>
-                  <select
-                    required
-                    value={cls}
-                    onChange={(e) =>
-                      setCls(e.target.value as "X" | "XI" | "XII" | "")
-                    }
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
-                  >
-                    <option value="">Pilih Kelas</option>
-                    <option value="X">Kelas X</option>
-                    <option value="XI">Kelas XI</option>
-                    <option value="XII">Kelas XII</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    Kode Sekolah
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase())}
-                    placeholder="Dari Guru BK"
-                    maxLength={15}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm uppercase font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Jenjang Kelas
+                </label>
+                <select
+                  required
+                  value={cls}
+                  onChange={(e) =>
+                    setCls(e.target.value as "X" | "XI" | "XII" | "")
+                  }
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+                >
+                  <option value="">Pilih Kelas (X, XI, atau XII)</option>
+                  <option value="X">Kelas X</option>
+                  <option value="XI">Kelas XI</option>
+                  <option value="XII">Kelas XII</option>
+                </select>
               </div>
 
               {/* Informasi Persetujuan (Informed Consent) */}
