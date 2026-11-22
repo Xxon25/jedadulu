@@ -21,8 +21,7 @@ import StudentPortal from "@/components/StudentPortal";
 
 export default function SiswaRoutePage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [state, setState] = useState<PlatformState | null>(null);
+  const [state, setState] = useState<PlatformState>(() => loadPlatformState());
   const [activeStudent, setActiveStudent] = useState<StudentRecord | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -47,7 +46,6 @@ export default function SiswaRoutePage() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     refreshData();
     syncFromSupabaseCloud();
 
@@ -74,16 +72,6 @@ export default function SiswaRoutePage() {
       }
     };
   }, [refreshData]);
-
-  if (!mounted || !state) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="text-sm font-bold text-indigo-600 animate-pulse">
-          Memuat Ruang Refleksi Siswa...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">

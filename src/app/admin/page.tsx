@@ -14,8 +14,7 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import AdminDashboard from "@/components/AdminDashboard";
 
 export default function AdminRoutePage() {
-  const [mounted, setMounted] = useState(false);
-  const [state, setState] = useState<PlatformState | null>(null);
+  const [state, setState] = useState<PlatformState>(() => loadPlatformState());
   const [activeStaff, setActiveStaff] = useState<StaffAccount | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -35,7 +34,6 @@ export default function AdminRoutePage() {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     refreshData();
     syncFromSupabaseCloud();
 
@@ -62,16 +60,6 @@ export default function AdminRoutePage() {
       }
     };
   }, [refreshData]);
-
-  if (!mounted || !state) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="text-sm font-bold text-indigo-600 animate-pulse">
-          Memuat Sistem Pengelola...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
