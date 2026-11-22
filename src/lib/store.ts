@@ -134,7 +134,7 @@ export const DEFAULT_LANDING_CONFIG: LandingPageConfig = {
     "Program Studi BK Pendidikan Islam · Fakultas Tarbiyah dan Keguruan · UIN Raden Intan Lampung (2026)",
 };
 
-const STORAGE_KEY = "jedadulu_platform_v2";
+const STORAGE_KEY = "jedadulu_platform_v3";
 const ACTIVE_STUDENT_KEY = "jedadulu_active_student_id";
 const ACTIVE_STAFF_KEY = "jedadulu_active_staff_session";
 
@@ -160,8 +160,8 @@ const INITIAL_STATE: PlatformState = {
   staffUsers: [
     {
       id: "st-1",
-      email: "guru@sekolah-contoh.sch.id",
-      password: "bk12345",
+      email: "gurubk@sekolah.sch.id",
+      password: "BK246",
       fullName: "Contoh BK",
       role: "guru_bk",
       nip: "198804122015032004",
@@ -170,7 +170,7 @@ const INITIAL_STATE: PlatformState = {
     },
     {
       id: "st-2",
-      email: "admin@sekolah-contoh.sch.id",
+      email: "admin@sekolah.sch.id",
       password: "admin12345",
       fullName: "Larasati Adi Ningrum",
       role: "admin",
@@ -811,26 +811,44 @@ export async function authenticateStaff(
 ): Promise<{ ok: boolean; error?: string; staff?: StaffAccount }> {
   // Fail-Fast validation
   const cleanEmail = email.trim().toLowerCase();
-  if (!cleanEmail || !password) {
+  const cleanPw = password.trim();
+  if (!cleanEmail || !cleanPw) {
     return { ok: false, error: "Email dan kata sandi wajib diisi." };
   }
 
-  // Jika Supabase Auth aktif, coba login dengan Supabase terlebih dahulu
+  // 1. Cek di daftar akun staf (mendukung sandi singkat seperti BK246 maupun akun baru yang dibuat Admin)
+  const state = loadPlatformState();
+  const account = state.staffUsers.find(
+    (u) =>
+      u.email.toLowerCase() === cleanEmail &&
+      (u.password === cleanPw || u.password?.toLowerCase() === cleanPw.toLowerCase())
+  );
+
+  if (account) {
+    if (!account.isActive) {
+      return { ok: false, error: "Akun ini sedang dinonaktifkan oleh Administrator." };
+    }
+    setActiveStaffSession(account);
+    return { ok: true, staff: account };
+  }
+
+  // 2. Fallback: Cek ke Supabase Auth jika akun didaftarkan lewat dashboard Supabase langsung
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
-        password,
+        password: cleanPw,
       });
       if (!error && data.user) {
-        const state = loadPlatformState();
         const found = state.staffUsers.find((u) => u.email.toLowerCase() === cleanEmail);
         const staffAccount: StaffAccount = found || {
           id: data.user.id,
           email: cleanEmail,
-          fullName: cleanEmail.includes("admin") ? "Admin BK" : "Guru BK",
+          fullName:
+            (data.user.user_metadata?.full_name as string) ||
+            (cleanEmail.includes("admin") ? "Admin BK" : "Contoh BK"),
           role: cleanEmail.includes("admin") ? "admin" : "guru_bk",
-          nip: "-",
+          nip: (data.user.user_metadata?.nip as string) || "-",
           schoolName: "SMA Negeri 1 Contoh",
           isActive: true,
         };
@@ -842,19 +860,5 @@ export async function authenticateStaff(
     }
   }
 
-  // Verifikasi terhadap akun terdaftar (mendukung demo & offline-first)
-  const state = loadPlatformState();
-  const account = state.staffUsers.find(
-    (u) => u.email.toLowerCase() === cleanEmail && u.password === password
-  );
-
-  if (!account) {
-    return { ok: false, error: "Email atau kata sandi salah. Silakan cek akun contoh." };
-  }
-  if (!account.isActive) {
-    return { ok: false, error: "Akun ini sedang dinonaktifkan oleh Administrator." };
-  }
-
-  setActiveStaffSession(account);
-  return { ok: true, staff: account };
+  return { ok: false, error: "Email atau kata sandi salah." };
 }

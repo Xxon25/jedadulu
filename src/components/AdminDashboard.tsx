@@ -273,7 +273,7 @@ export default function AdminDashboard({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@sekolah-contoh.sch.id"
+              placeholder="admin@sekolah.sch.id"
               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:bg-white focus:outline-none focus:border-indigo-600"
             />
           </div>

@@ -9,6 +9,6 @@ ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO public.staff_users (email, full_name, role, nip, school_name, is_active)
 VALUES
-  ('guru@sekolah-contoh.sch.id', 'Contoh BK', 'guru_bk', '198804122015032004', 'SMA Negeri 1 Contoh', TRUE),
-  ('admin@sekolah-contoh.sch.id', 'Larasati Adi Ningrum (Admin BK)', 'admin', '2411080031', 'SMA Negeri 1 Contoh', TRUE)
+  ('gurubk@sekolah.sch.id', 'Contoh BK', 'guru_bk', '198804122015032004', 'SMA Negeri 1 Contoh', TRUE),
+  ('admin@sekolah.sch.id', 'Larasati Adi Ningrum (Admin BK)', 'admin', '2411080031', 'SMA Negeri 1 Contoh', TRUE)
 ON CONFLICT (email) DO NOTHING;
