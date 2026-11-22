@@ -149,7 +149,7 @@ export default function CounselorDashboard({
   const handleSendCounselorChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedChatStudentId) return;
-    const senderName = activeStaff?.fullName || "Bu Dewi, S.Pd., Kons.";
+    const senderName = activeStaff?.fullName || "Contoh BK";
     const res = await sendLiveChatMessage(
       selectedChatStudentId,
       "guru_bk",

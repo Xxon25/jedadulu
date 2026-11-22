@@ -134,7 +134,7 @@ export const DEFAULT_LANDING_CONFIG: LandingPageConfig = {
     "Program Studi BK Pendidikan Islam · Fakultas Tarbiyah dan Keguruan · UIN Raden Intan Lampung (2026)",
 };
 
-const STORAGE_KEY = "jedadulu_platform_v1";
+const STORAGE_KEY = "jedadulu_platform_v2";
 const ACTIVE_STUDENT_KEY = "jedadulu_active_student_id";
 const ACTIVE_STAFF_KEY = "jedadulu_active_staff_session";
 
@@ -162,7 +162,7 @@ const INITIAL_STATE: PlatformState = {
       id: "st-1",
       email: "guru@sekolah-contoh.sch.id",
       password: "bk12345",
-      fullName: "Bu Dewi, S.Pd., Kons.",
+      fullName: "Contoh BK",
       role: "guru_bk",
       nip: "198804122015032004",
       schoolName: "SMA Negeri 1 Contoh",
@@ -361,7 +361,7 @@ const INITIAL_STATE: PlatformState = {
       studentClass: "XI",
       senderRole: "siswa",
       senderName: "Dinda",
-      message: "Assalamualaikum Bu Dewi, saya Dinda kelas XI. Tadi saya coba Decision Tree dan dapat Hasil C (Ambil Jeda).",
+      message: "Assalamualaikum, saya Dinda kelas XI. Tadi saya coba Decision Tree dan dapat Hasil C (Ambil Jeda).",
       createdAt: "2026-11-21T14:26:00.000Z",
     },
     {
@@ -370,8 +370,8 @@ const INITIAL_STATE: PlatformState = {
       studentNick: "Dinda",
       studentClass: "XI",
       senderRole: "guru_bk",
-      senderName: "Bu Dewi, S.Pd., Kons.",
-      message: "Waalaikumsalam Dinda. Terima kasih sudah berani berefleksi di jedadulu.id ya. Ibu juga sudah baca jurnal yang Dinda bagikan. Apa yang paling membuat Dinda cemas saat melihat story konser teman?",
+      senderName: "Contoh BK",
+      message: "Waalaikumsalam Dinda. Terima kasih sudah berani berefleksi di jedadulu.id ya. Saya juga sudah baca jurnal yang Dinda bagikan. Apa yang paling membuat Dinda cemas saat melihat story konser teman?",
       createdAt: "2026-11-21T14:28:00.000Z",
     },
     {
@@ -381,7 +381,7 @@ const INITIAL_STATE: PlatformState = {
       studentClass: "XI",
       senderRole: "siswa",
       senderName: "Dinda",
-      message: "Saya takut besok di sekolah tidak nyambung waktu mereka ngobrolin konser itu Bu...",
+      message: "Saya takut besok di sekolah tidak nyambung waktu mereka ngobrolin konser itu...",
       createdAt: "2026-11-21T14:30:00.000Z",
     },
     {
@@ -391,7 +391,7 @@ const INITIAL_STATE: PlatformState = {
       studentClass: "X",
       senderRole: "siswa",
       senderName: "Yoga",
-      message: "Selamat siang Bu Dewi, saya Yoga kelas X. Mau tanya jadwal konsultasi saya jadi hari apa ya Bu?",
+      message: "Selamat siang, saya Yoga kelas X. Mau tanya jadwal konsultasi saya jadi hari apa ya?",
       createdAt: "2026-11-21T20:12:00.000Z",
     },
     {
@@ -400,8 +400,8 @@ const INITIAL_STATE: PlatformState = {
       studentNick: "Yoga",
       studentClass: "X",
       senderRole: "guru_bk",
-      senderName: "Bu Dewi, S.Pd., Kons.",
-      message: "Siang Yoga! Sudah Ibu jadwalkan untuk Selasa jam istirahat kedua (10:15) di Ruang BK ya. Kita bahas bareng tips mengatur uang sakunya.",
+      senderName: "Contoh BK",
+      message: "Siang Yoga! Sudah dijadwalkan untuk Selasa jam istirahat kedua (10:15) di Ruang BK ya. Kita bahas bareng tips mengatur uang sakunya.",
       createdAt: "2026-11-21T20:15:00.000Z",
     },
   ],
